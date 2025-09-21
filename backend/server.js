@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const userRoutes = require('./routes/users');
 const passwordResetRoutes = require('./routes/passwordReset');
+const ofertasRoutes = require('./routes/ofertas');
 const db = require('./config/database');
 
 const app = express();
@@ -27,6 +28,7 @@ app.get('/api/test-db', async (req, res) => {
 // Rotas
 app.use('/api/users', userRoutes);
 app.use('/api/auth', passwordResetRoutes);
+app.use('/api/ofertas', ofertasRoutes);
 
 // Rota básica
 app.get('/api/hello', (req, res) => {
