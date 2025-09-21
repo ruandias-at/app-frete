@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -18,7 +18,16 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-
+      <header className="dashboard-header">
+        <h1>Sistema de Frete</h1>
+        <div className="user-info">
+          <span>Bem-vindo, {user.nome}!</span>
+          <span className="user-type">({user.tipo})</span>
+          <button onClick={handleLogout} className="logout-btn">
+            Sair
+          </button>
+        </div>
+      </header>
 
       <main className="dashboard-content">
         <div className="welcome-card">
@@ -36,8 +45,8 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="action-buttons">
-                <button className="action-btn">Ver Ofertas</button>
-                <button className="action-btn">Meu Perfil</button>
+                <Link to="/criar-oferta" className="action-btn">Nova Oferta</Link>
+                <Link to="/minhas-ofertas" className="action-btn">Minhas Ofertas</Link>
                 <button className="action-btn">Histórico</button>
               </div>
             )}

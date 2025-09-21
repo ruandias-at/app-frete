@@ -8,6 +8,8 @@ import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
+import CriarOferta from './components/CriarOferta';
+import MinhasOfertas from './components/MinhasOfertas';
 import './App.css';
 
 function App() {
@@ -31,6 +33,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/criar-oferta" 
+              element={
+                <ProtectedRoute>
+                  <CriarOferta />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/minhas-ofertas" 
+              element={
+                <ProtectedRoute>
+                  <MinhasOfertas />
                 </ProtectedRoute>
               } 
             />
