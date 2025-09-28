@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const userRoutes = require('./routes/users');
@@ -14,6 +15,10 @@ const PORT = process.env.PORT || 5000;
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Servir arquivos estáticos (imagens)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Testar conexão com banco
 app.get('/api/test-db', async (req, res) => {

@@ -218,6 +218,22 @@
   line-height: 1.5;
 }
 
+.oferta-imagem {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.caminhao-foto {
+  max-width: 100%;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e5e9;
+}
+
 .oferta-actions {
   display: flex;
   justify-content: space-between;
@@ -276,6 +292,11 @@
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: white;
 }
 
 .btn-edit {
@@ -285,6 +306,8 @@
 .btn-edit:hover {
   background: #138496;
   transform: translateY(-1px);
+  color: white;
+  text-decoration: none;
 }
 
 .btn-delete {

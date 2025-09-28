@@ -9,6 +9,7 @@ import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import CriarOferta from './components/CriarOferta';
+import EditarOferta from './components/EditarOferta';
 import MinhasOfertas from './components/MinhasOfertas';
 import './App.css';
 
@@ -41,6 +42,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CriarOferta />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/editar-oferta/:id" 
+              element={
+                <ProtectedRoute>
+                  <EditarOferta />
                 </ProtectedRoute>
               } 
             />

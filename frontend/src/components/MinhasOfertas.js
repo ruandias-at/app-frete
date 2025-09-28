@@ -2,14 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import ConfirmModal from './ConfirmModal';
 import './MinhasOfertas.css';
 
 const MinhasOfertas = () => {
   const { user } = useAuth();
-  const [ofertas, setOfertas] = useState([]);
+    const [ofertas, setOfertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    ofertaId: null,
+    ofertaInfo: null
+  });
+
+  const fetchOfertas = React.useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/ofertas/minhas');
+      setOfertas(response.data.ofertas);
+    } catch (error) {
+      setError('Erro ao carregar suas ofertas');
+      console.error('Erro ao buscar ofertas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchStats = React.useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/ofertas/stats/resumo');
+      setStats(response.data.stats);
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error);
+    }
+  }, []);
 
   useEffect(() => {
     // Só busca dados se for fretista
@@ -19,7 +46,7 @@ const MinhasOfertas = () => {
     } else {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, fetchOfertas, fetchStats]);
 
   // Verificar se é fretista
   if (user?.tipo !== 'fretista') {
@@ -31,27 +58,6 @@ const MinhasOfertas = () => {
     );
   }
 
-  const fetchOfertas = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/ofertas/minhas');
-      setOfertas(response.data.ofertas);
-    } catch (error) {
-      setError('Erro ao carregar suas ofertas');
-      console.error('Erro ao buscar ofertas:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/ofertas/stats/resumo');
-      setStats(response.data.stats);
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
-    }
-  };
-
   const handleUpdateStatus = async (ofertaId, newStatus) => {
     try {
       await axios.patch(`http://localhost:5000/api/ofertas/${ofertaId}/status`, {
@@ -59,31 +65,42 @@ const MinhasOfertas = () => {
       });
       
       // Atualizar a lista
-      fetchOfertas();
-      fetchStats();
+      await fetchOfertas();
+      await fetchStats();
       
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
-      alert('Erro ao atualizar status da oferta');
+      alert('Erro ao atualizar status da oferta: ' + (error.response?.data?.message || 'Erro desconhecido'));
     }
   };
 
-  const handleDeleteOferta = async (ofertaId) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta oferta?')) {
-      return;
-    }
+  const handleDeleteOferta = (oferta) => {
+    setDeleteModal({
+      isOpen: true,
+      ofertaId: oferta.id,
+      ofertaInfo: `${oferta.origem} → ${oferta.destino}`
+    });
+  };
 
+  const confirmDelete = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/ofertas/${ofertaId}`);
+      await axios.delete(`http://localhost:5000/api/ofertas/${deleteModal.ofertaId}`);
       
       // Atualizar a lista
-      fetchOfertas();
-      fetchStats();
+      await fetchOfertas();
+      await fetchStats();
+      
+      // Fechar modal
+      setDeleteModal({ isOpen: false, ofertaId: null, ofertaInfo: null });
       
     } catch (error) {
       console.error('Erro ao excluir oferta:', error);
-      alert('Erro ao excluir oferta');
+      alert('Erro ao excluir oferta: ' + (error.response?.data?.message || 'Erro desconhecido'));
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModal({ isOpen: false, ofertaId: null, ofertaInfo: null });
   };
 
   const formatCurrency = (value) => {
@@ -101,7 +118,8 @@ const MinhasOfertas = () => {
     const colors = {
       'aberto': '#28a745',
       'em_andamento': '#ffc107',
-      'concluido': '#6c757d'
+      'concluido': '#6c757d',
+      'cancelado': '#dc3545'
     };
     return colors[status] || '#6c757d';
   };
@@ -110,7 +128,8 @@ const MinhasOfertas = () => {
     const texts = {
       'aberto': 'Aberto',
       'em_andamento': 'Em Andamento',
-      'concluido': 'Concluído'
+      'concluido': 'Concluído',
+      'cancelado': 'Cancelado'
     };
     return texts[status] || status;
   };
@@ -169,7 +188,13 @@ const MinhasOfertas = () => {
               </Link>
             </div>
           ) : (
-            ofertas.map(oferta => (
+            ofertas.map(oferta => {
+              // Debug: verificar se o ID existe
+              if (!oferta.id) {
+                console.error('Oferta sem ID:', oferta);
+              }
+              
+              return (
               <div key={oferta.id} className="oferta-card">
                 <div className="oferta-header">
                   <div className="oferta-route">
@@ -212,30 +237,73 @@ const MinhasOfertas = () => {
                       <p>{oferta.descricao}</p>
                     </div>
                   )}
+
+                  {oferta.imagem_caminhao && (
+                    <div className="oferta-imagem">
+                      <img 
+                        src={`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`}
+                        alt="Foto do caminhão"
+                        className="caminhao-foto"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="oferta-actions">
                   <div className="status-actions">
                     {oferta.status === 'aberto' && (
-                      <button 
-                        onClick={() => handleUpdateStatus(oferta.id, 'em_andamento')}
-                        className="btn-status em-andamento"
-                      >
-                        Iniciar
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => handleUpdateStatus(oferta.id, 'em_andamento')}
+                          className="btn-status em-andamento"
+                          title="Marcar como em andamento"
+                        >
+                          Iniciar
+                        </button>
+                        <button 
+                          onClick={() => handleUpdateStatus(oferta.id, 'cancelado')}
+                          className="btn-status cancelado"
+                          title="Cancelar oferta"
+                        >
+                          Cancelar
+                        </button>
+                      </>
                     )}
                     {oferta.status === 'em_andamento' && (
-                      <button 
-                        onClick={() => handleUpdateStatus(oferta.id, 'concluido')}
-                        className="btn-status concluido"
-                      >
-                        Finalizar
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => handleUpdateStatus(oferta.id, 'concluido')}
+                          className="btn-status concluido"
+                          title="Marcar como concluído"
+                        >
+                          Finalizar
+                        </button>
+                        <button 
+                          onClick={() => handleUpdateStatus(oferta.id, 'aberto')}
+                          className="btn-status aberto"
+                          title="Voltar para aberto"
+                        >
+                          Reabrir
+                        </button>
+                      </>
                     )}
                     {oferta.status === 'concluido' && (
                       <button 
                         onClick={() => handleUpdateStatus(oferta.id, 'aberto')}
                         className="btn-status aberto"
+                        title="Reabrir oferta"
+                      >
+                        Reabrir
+                      </button>
+                    )}
+                    {oferta.status === 'cancelado' && (
+                      <button 
+                        onClick={() => handleUpdateStatus(oferta.id, 'aberto')}
+                        className="btn-status aberto"
+                        title="Reabrir oferta"
                       >
                         Reabrir
                       </button>
@@ -243,14 +311,19 @@ const MinhasOfertas = () => {
                   </div>
 
                   <div className="crud-actions">
-                    <button 
+                    <Link 
+                      to={`/editar-oferta/${oferta.id}`}
                       className="btn-edit"
                       title="Editar oferta"
+                      onClick={() => console.log('Link para:', `/editar-oferta/${oferta.id}`)}
                     >
                       ✏️
-                    </button>
+                    </Link>
                     <button 
-                      onClick={() => handleDeleteOferta(oferta.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDeleteOferta(oferta);
+                      }}
                       className="btn-delete"
                       title="Excluir oferta"
                     >
@@ -263,9 +336,21 @@ const MinhasOfertas = () => {
                   <small>Criado em: {formatDate(oferta.criado_em)}</small>
                 </div>
               </div>
-            ))
+            )})
           )}
         </div>
+
+        {/* Modal de confirmação para exclusão */}
+        <ConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={cancelDelete}
+          onConfirm={confirmDelete}
+          title="Excluir Oferta"
+          message={`Tem certeza que deseja excluir a oferta "${deleteModal.ofertaInfo}"? Esta ação não pode ser desfeita.`}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          type="danger"
+        />
       </div>
     </div>
   );

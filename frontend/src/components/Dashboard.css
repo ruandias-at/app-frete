@@ -149,6 +149,10 @@
   font-weight: 500;
 }
 
+.recent-activity-card {
+  margin-top: 50px;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .dashboard-header {

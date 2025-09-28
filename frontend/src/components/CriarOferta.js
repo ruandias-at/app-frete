@@ -15,9 +15,11 @@ const CriarOferta = () => {
     preco: '',
     data_disponivel: '',
     capacidade_peso: '',
-    capacidade_volume: ''
+    capacidade_volume: '',
+    imagem_caminhao: null
   });
   
+  const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -40,6 +42,59 @@ const CriarOferta = () => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    
+    if (file) {
+      // Validar tipo de arquivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Tipo de arquivo não permitido. Use apenas JPEG, PNG ou WebP.');
+        return;
+      }
+
+      // Validar tamanho (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Arquivo muito grande. Tamanho máximo: 5MB');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        imagem_caminhao: file
+      }));
+
+      // Criar preview da imagem
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+      
+      setError(''); // Limpar erro se arquivo é válido
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        imagem_caminhao: null
+      }));
+      setImagePreview(null);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      imagem_caminhao: null
+    }));
+    setImagePreview(null);
+    
+    // Limpar o input file
+    const fileInput = document.getElementById('imagem_caminhao');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -47,7 +102,32 @@ const CriarOferta = () => {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:5000/api/ofertas', formData);
+      // Criar FormData para envio de arquivo
+      const submitData = new FormData();
+      
+      // Adicionar campos de texto
+      submitData.append('origem', formData.origem);
+      submitData.append('destino', formData.destino);
+      submitData.append('descricao', formData.descricao);
+      submitData.append('preco', formData.preco);
+      submitData.append('data_disponivel', formData.data_disponivel);
+      if (formData.capacidade_peso) {
+        submitData.append('capacidade_peso', formData.capacidade_peso);
+      }
+      if (formData.capacidade_volume) {
+        submitData.append('capacidade_volume', formData.capacidade_volume);
+      }
+      
+      // Adicionar imagem se selecionada
+      if (formData.imagem_caminhao) {
+        submitData.append('imagem_caminhao', formData.imagem_caminhao);
+      }
+
+      await axios.post('http://localhost:5000/api/ofertas', submitData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       
       setSuccess('Oferta criada com sucesso!');
       
@@ -59,8 +139,16 @@ const CriarOferta = () => {
         preco: '',
         data_disponivel: '',
         capacidade_peso: '',
-        capacidade_volume: ''
+        capacidade_volume: '',
+        imagem_caminhao: null
       });
+      setImagePreview(null);
+      
+      // Limpar input file
+      const fileInput = document.getElementById('imagem_caminhao');
+      if (fileInput) {
+        fileInput.value = '';
+      }
 
       // Redirecionar após 2 segundos
       setTimeout(() => {
@@ -184,6 +272,54 @@ const CriarOferta = () => {
               rows="4"
               placeholder="Descreva detalhes sobre o frete, tipo de carga aceita, condições especiais, etc."
             />
+          </div>
+
+          <div className="form-group full-width">
+            <label htmlFor="imagem_caminhao">Foto do Caminhão (opcional)</label>
+            <div className="image-upload-container">
+              {!imagePreview ? (
+                <div className="image-upload-area">
+                  <input
+                    type="file"
+                    id="imagem_caminhao"
+                    name="imagem_caminhao"
+                    onChange={handleImageChange}
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="image-input"
+                  />
+                  <label htmlFor="imagem_caminhao" className="image-upload-label">
+                    <div className="upload-icon">📷</div>
+                    <div className="upload-text">
+                      <strong>Clique para selecionar uma foto</strong>
+                      <span>ou arraste e solte aqui</span>
+                    </div>
+                    <div className="upload-info">
+                      Formatos aceitos: JPEG, PNG, WebP (máx. 5MB)
+                    </div>
+                  </label>
+                </div>
+              ) : (
+                <div className="image-preview-container">
+                  <img src={imagePreview} alt="Preview do caminhão" className="image-preview" />
+                  <div className="image-actions">
+                    <button type="button" onClick={removeImage} className="remove-image-btn">
+                      ❌ Remover imagem
+                    </button>
+                    <label htmlFor="imagem_caminhao" className="change-image-btn">
+                      🔄 Trocar imagem
+                    </label>
+                    <input
+                      type="file"
+                      id="imagem_caminhao"
+                      name="imagem_caminhao"
+                      onChange={handleImageChange}
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className="image-input"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="form-actions">

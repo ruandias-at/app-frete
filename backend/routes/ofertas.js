@@ -1,6 +1,7 @@
 const express = require('express');
 const Oferta = require('../models/Oferta');
 const authenticateToken = require('../middleware/auth');
+const { uploadWithErrorHandling, deleteFile } = require('../middleware/upload');
 const router = express.Router();
 
 // Middleware para verificar se é fretista
@@ -12,7 +13,7 @@ const checkFretista = (req, res, next) => {
 };
 
 // Criar nova oferta (apenas fretistas)
-router.post('/', authenticateToken, checkFretista, async (req, res) => {
+router.post('/', authenticateToken, checkFretista, uploadWithErrorHandling, async (req, res) => {
   try {
     const {
       origem,
@@ -26,6 +27,10 @@ router.post('/', authenticateToken, checkFretista, async (req, res) => {
 
     // Validações básicas
     if (!origem || !destino || !preco || !data_disponivel) {
+      // Se houve upload de imagem mas deu erro na validação, deletar arquivo
+      if (req.file) {
+        deleteFile(req.file.filename);
+      }
       return res.status(400).json({ 
         message: 'Origem, destino, preço e data são obrigatórios' 
       });
@@ -33,6 +38,9 @@ router.post('/', authenticateToken, checkFretista, async (req, res) => {
 
     // Validar preço
     if (isNaN(preco) || preco <= 0) {
+      if (req.file) {
+        deleteFile(req.file.filename);
+      }
       return res.status(400).json({ 
         message: 'Preço deve ser um número válido maior que zero' 
       });
@@ -44,6 +52,9 @@ router.post('/', authenticateToken, checkFretista, async (req, res) => {
     hoje.setHours(0, 0, 0, 0);
 
     if (dataDisponivel < hoje) {
+      if (req.file) {
+        deleteFile(req.file.filename);
+      }
       return res.status(400).json({ 
         message: 'Data disponível não pode ser no passado' 
       });
@@ -57,17 +68,23 @@ router.post('/', authenticateToken, checkFretista, async (req, res) => {
       preco: parseFloat(preco),
       data_disponivel,
       capacidade_peso: capacidade_peso ? parseFloat(capacidade_peso) : null,
-      capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null
+      capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null,
+      imagem_caminhao: req.file ? req.file.filename : null
     };
 
     const ofertaId = await Oferta.create(ofertaData);
 
     res.status(201).json({
       message: 'Oferta criada com sucesso',
-      ofertaId
+      ofertaId,
+      imagem_uploaded: !!req.file
     });
 
   } catch (error) {
+    // Em caso de erro, deletar arquivo se foi enviado
+    if (req.file) {
+      deleteFile(req.file.filename);
+    }
     console.error('Erro ao criar oferta:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
@@ -119,7 +136,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Atualizar oferta (apenas o próprio fretista)
-router.put('/:id', authenticateToken, checkFretista, async (req, res) => {
+router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, async (req, res) => {
   try {
     const {
       origem,
@@ -133,8 +150,22 @@ router.put('/:id', authenticateToken, checkFretista, async (req, res) => {
 
     // Validações básicas
     if (!origem || !destino || !preco || !data_disponivel) {
+      if (req.file) {
+        deleteFile(req.file.filename);
+      }
       return res.status(400).json({ 
         message: 'Origem, destino, preço e data são obrigatórios' 
+      });
+    }
+
+    // Buscar oferta atual para pegar imagem antiga
+    const ofertaAtual = await Oferta.findById(req.params.id);
+    if (!ofertaAtual || ofertaAtual.usuario_id !== req.user.userId) {
+      if (req.file) {
+        deleteFile(req.file.filename);
+      }
+      return res.status(404).json({ 
+        message: 'Oferta não encontrada ou você não tem permissão para editá-la' 
       });
     }
 
@@ -145,20 +176,35 @@ router.put('/:id', authenticateToken, checkFretista, async (req, res) => {
       preco: parseFloat(preco),
       data_disponivel,
       capacidade_peso: capacidade_peso ? parseFloat(capacidade_peso) : null,
-      capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null
+      capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null,
+      imagem_caminhao: req.file ? req.file.filename : ofertaAtual.imagem_caminhao
     };
 
     const updated = await Oferta.update(req.params.id, ofertaData, req.user.userId);
 
     if (!updated) {
+      if (req.file) {
+        deleteFile(req.file.filename);
+      }
       return res.status(404).json({ 
         message: 'Oferta não encontrada ou você não tem permissão para editá-la' 
       });
     }
 
-    res.json({ message: 'Oferta atualizada com sucesso' });
+    // Se nova imagem foi enviada, deletar a antiga
+    if (req.file && ofertaAtual.imagem_caminhao) {
+      deleteFile(ofertaAtual.imagem_caminhao);
+    }
+
+    res.json({ 
+      message: 'Oferta atualizada com sucesso',
+      imagem_updated: !!req.file
+    });
 
   } catch (error) {
+    if (req.file) {
+      deleteFile(req.file.filename);
+    }
     console.error('Erro ao atualizar oferta:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
@@ -194,6 +240,12 @@ router.patch('/:id/status', authenticateToken, checkFretista, async (req, res) =
 // Excluir oferta
 router.delete('/:id', authenticateToken, checkFretista, async (req, res) => {
   try {
+    // Buscar oferta para pegar nome da imagem antes de deletar
+    const oferta = await Oferta.findById(req.params.id);
+    if (oferta && oferta.usuario_id === req.user.userId && oferta.imagem_caminhao) {
+      deleteFile(oferta.imagem_caminhao);
+    }
+
     const deleted = await Oferta.delete(req.params.id, req.user.userId);
 
     if (!deleted) {

@@ -168,6 +168,26 @@
   line-height: 1.5;
 }
 
+.loading-container,
+.error-container {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+}
+
+.loading {
+  font-size: 18px;
+  color: #667eea;
+}
+
+.error-container .error-message {
+  margin-bottom: 0;
+}
+
 .access-denied {
   min-height: 80vh;
   display: flex;
