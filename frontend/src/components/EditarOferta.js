@@ -16,9 +16,11 @@ const EditarOferta = () => {
     preco: '',
     data_disponivel: '',
     capacidade_peso: '',
-    capacidade_volume: ''
+    capacidade_volume: '',
+    imagem_caminhao: ''
   });
   
+  const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -81,6 +83,59 @@ const EditarOferta = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    
+    if (file) {
+      // Validar tipo de arquivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Tipo de arquivo não permitido. Use apenas JPEG, PNG ou WebP.');
+        return;
+      }
+
+      // Validar tamanho (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Arquivo muito grande. Tamanho máximo: 5MB');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        imagem_caminhao: file
+      }));
+
+      // Criar preview da imagem
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+      
+      setError(''); // Limpar erro se arquivo é válido
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        imagem_caminhao: null
+      }));
+      setImagePreview(null);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      imagem_caminhao: null
+    }));
+    setImagePreview(null);
+    
+    // Limpar o input file
+    const fileInput = document.getElementById('imagem_caminhao');
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -226,7 +281,7 @@ const EditarOferta = () => {
           </div>
 
           <div className="form-group full-width">
-            <label htmlFor="descricao">Descrição</label>
+            <label htmlFor="descricao">Descrição (opcional)</label>
             <textarea
               id="descricao"
               name="descricao"
@@ -237,7 +292,50 @@ const EditarOferta = () => {
             />
           </div>
 
-          
+          <div className="form-group full-width">
+            <label htmlFor="imagem_caminhao">Trocar Foto do Caminhão (opcional)</label>
+            <div className="image-upload-container">
+              {!imagePreview ? (
+                <div className="image-upload-area">
+                  <input
+                    type="file"
+                    id="imagem_caminhao"
+                    name="imagem_caminhao"
+                    onChange={handleImageChange}
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="image-input"
+                  />
+                  <label htmlFor="imagem_caminhao" className="image-upload-label">
+                    <div className="upload-icon">📷</div>
+                    <div className="upload-text">
+                      <strong>Clique para selecionar uma foto</strong>
+                      <span> ou arraste e solte aqui</span>
+                    </div>
+                    <div className="upload-info">
+                      Formatos aceitos: JPEG, PNG, WebP (máx. 5MB)
+                    </div>
+                  </label>
+                </div>
+              ) : (
+                <div className="image-preview-container">
+                  <img src={imagePreview} alt="Preview do caminhão" className="image-preview" />
+                  <div className="image-actions">
+                    <button type="button" onClick={removeImage} className="remove-image-btn">
+                      ❌ Remover imagem
+                    </button>
+                    <input
+                      type="file"
+                      id="imagem_caminhao"
+                      name="imagem_caminhao"
+                      onChange={handleImageChange}
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className="image-input"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="form-actions">
             <button 

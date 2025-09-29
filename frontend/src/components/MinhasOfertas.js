@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ConfirmModal from './ConfirmModal';
 import './MinhasOfertas.css';
 
 const MinhasOfertas = () => {
   const { user } = useAuth();
-    const [ofertas, setOfertas] = useState([]);
+  const navigate = useNavigate();
+  const [ofertas, setOfertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
@@ -238,6 +239,7 @@ const MinhasOfertas = () => {
                     </div>
                   )}
 
+                  {/* Foto do caminhão */}
                   {oferta.imagem_caminhao && (
                     <div className="oferta-imagem">
                       <img 
@@ -245,6 +247,7 @@ const MinhasOfertas = () => {
                         alt="Foto do caminhão"
                         className="caminhao-foto"
                         onError={(e) => {
+                          console.error('Erro ao carregar imagem:', oferta.imagem_caminhao);
                           e.target.style.display = 'none';
                         }}
                       />
@@ -263,13 +266,7 @@ const MinhasOfertas = () => {
                         >
                           Iniciar
                         </button>
-                        <button 
-                          onClick={() => handleUpdateStatus(oferta.id, 'cancelado')}
-                          className="btn-status cancelado"
-                          title="Cancelar oferta"
-                        >
-                          Cancelar
-                        </button>
+                        
                       </>
                     )}
                     {oferta.status === 'em_andamento' && (

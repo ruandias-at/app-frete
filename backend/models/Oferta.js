@@ -10,17 +10,18 @@ class Oferta {
       preco, 
       data_disponivel, 
       capacidade_peso, 
-      capacidade_volume 
+      capacidade_volume,
+      imagem_caminhao
     } = ofertaData;
 
     const [result] = await db.execute(`
       INSERT INTO ofertas (
         usuario_id, origem, destino, descricao, preco, 
-        data_disponivel, capacidade_peso, capacidade_volume, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'aberto')
+        data_disponivel, capacidade_peso, capacidade_volume, imagem_caminhao, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'aberto')
     `, [
       usuario_id, origem, destino, descricao, preco,
-      data_disponivel, capacidade_peso, capacidade_volume
+      data_disponivel, capacidade_peso, capacidade_volume, imagem_caminhao
     ]);
 
     return result.insertId;
@@ -119,13 +120,23 @@ class Oferta {
     return result.affectedRows > 0;
   }
 
-  static async delete(id, userId) {
+    static async delete(id, userId) {
+    // Primeiro buscar a oferta para pegar o nome da imagem
+    const [oferta] = await db.execute(
+      'SELECT imagem_caminhao FROM ofertas WHERE id = ? AND usuario_id = ?',
+      [id, userId]
+    );
+
     const [result] = await db.execute(
       'DELETE FROM ofertas WHERE id = ? AND usuario_id = ?',
       [id, userId]
     );
 
-    return result.affectedRows > 0;
+    // Retornar também o nome da imagem para deletar o arquivo
+    return {
+      deleted: result.affectedRows > 0,
+      imagem: oferta[0]?.imagem_caminhao || null
+    };
   }
 
   static async getStats(userId) {

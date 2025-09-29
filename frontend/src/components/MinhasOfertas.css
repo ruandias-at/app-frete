@@ -221,17 +221,26 @@
 .oferta-imagem {
   margin-top: 15px;
   text-align: center;
+  padding: 10px;
+  background: #f8f9fc;
+  border-radius: 8px;
 }
 
 .caminhao-foto {
   max-width: 100%;
-  max-height: 200px;
+  max-height: 250px;
   width: auto;
   height: auto;
   object-fit: cover;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e1e5e9;
+  border: 2px solid #e1e5e9;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.caminhao-foto:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .oferta-actions {

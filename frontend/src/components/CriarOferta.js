@@ -16,7 +16,7 @@ const CriarOferta = () => {
     data_disponivel: '',
     capacidade_peso: '',
     capacidade_volume: '',
-    imagem_caminhao: null
+    imagem_caminhao: ''
   });
   
   const [imagePreview, setImagePreview] = useState(null);
@@ -291,7 +291,7 @@ const CriarOferta = () => {
                     <div className="upload-icon">📷</div>
                     <div className="upload-text">
                       <strong>Clique para selecionar uma foto</strong>
-                      <span>ou arraste e solte aqui</span>
+                      <span> ou arraste e solte aqui</span>
                     </div>
                     <div className="upload-info">
                       Formatos aceitos: JPEG, PNG, WebP (máx. 5MB)
@@ -305,9 +305,6 @@ const CriarOferta = () => {
                     <button type="button" onClick={removeImage} className="remove-image-btn">
                       ❌ Remover imagem
                     </button>
-                    <label htmlFor="imagem_caminhao" className="change-image-btn">
-                      🔄 Trocar imagem
-                    </label>
                     <input
                       type="file"
                       id="imagem_caminhao"
