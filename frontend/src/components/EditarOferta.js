@@ -25,10 +25,9 @@ const EditarOferta = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [removerImagem, setRemoverImagem] = useState(false); // Novo estado para controlar remoção de imagem
+  const [removerImagem, setRemoverImagem] = useState(false);
 
   useEffect(() => {
-    // Só busca dados se for fretista
     if (user?.tipo === 'fretista') {
       fetchOferta();
     } else {
@@ -36,7 +35,6 @@ const EditarOferta = () => {
     }
   }, [id, user]);
 
-  // Verificar se é fretista (após hooks)
   if (user?.tipo !== 'fretista') {
     return (
       <div className="access-denied">
@@ -51,7 +49,6 @@ const EditarOferta = () => {
       const response = await axios.get(`http://localhost:5000/api/ofertas/${id}`);
       const oferta = response.data.oferta;
 
-      // Formatar data para input date
       const dataFormatada = new Date(oferta.data_disponivel).toISOString().split('T')[0];
 
       setFormData({
@@ -62,13 +59,11 @@ const EditarOferta = () => {
         data_disponivel: dataFormatada,
         capacidade_peso: oferta.capacidade_peso || '',
         capacidade_volume: oferta.capacidade_volume || '',
-        imagem_caminhao: '' // Manter vazio para nova imagem
+        imagem_caminhao: ''
       });
 
-      // Resetar estado de remoção de imagem
       setRemoverImagem(false);
 
-      // Se houver imagem existente, carregar preview
       if (oferta.imagem_caminhao) {
         setImagePreview(`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`);
       }
@@ -97,14 +92,12 @@ const EditarOferta = () => {
     const file = e.target.files[0];
     
     if (file) {
-      // Validar tipo de arquivo
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
         setError('Tipo de arquivo não permitido. Use apenas JPEG, PNG ou WebP.');
         return;
       }
 
-      // Validar tamanho (5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Arquivo muito grande. Tamanho máximo: 5MB');
         return;
@@ -115,46 +108,17 @@ const EditarOferta = () => {
         imagem_caminhao: file
       }));
 
-      // Resetar remoção de imagem se o usuário selecionar uma nova
       setRemoverImagem(false);
 
-      // Criar preview da imagem com tamanho limitado
+      // REMOVIDO O REDIMENSIONAMENTO - AGORA USA A IMAGEM ORIGINAL
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          // Definir tamanho máximo para a prévia
-          const maxWidth = 400;
-          const maxHeight = 300;
-          
-          let { width, height } = img;
-          
-          // Redimensionar mantendo a proporção
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-          
-          if (height > maxHeight) {
-            width = (width * maxHeight) / height;
-            height = maxHeight;
-          }
-          
-          // Criar canvas para redimensionar a imagem
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          setImagePreview(canvas.toDataURL('image/jpeg', 0.8));
-        };
-        img.src = e.target.result;
+        // Usa a imagem original sem redimensionar
+        setImagePreview(e.target.result);
       };
       reader.readAsDataURL(file);
       
-      setError(''); // Limpar erro se arquivo é válido
+      setError('');
     } else {
       setFormData(prev => ({
         ...prev,
@@ -170,9 +134,8 @@ const EditarOferta = () => {
       imagem_caminhao: null
     }));
     setImagePreview(null);
-    setRemoverImagem(true); // Marcar que a imagem existente deve ser removida
+    setRemoverImagem(true);
     
-    // Limpar o input file
     const fileInput = document.getElementById('imagem_caminhao');
     if (fileInput) {
       fileInput.value = '';
@@ -186,10 +149,8 @@ const EditarOferta = () => {
     setSuccess('');
 
     try {
-      // Criar FormData para envio de arquivo (se houver nova imagem)
       const submitData = new FormData();
       
-      // Adicionar campos de texto
       submitData.append('origem', formData.origem);
       submitData.append('destino', formData.destino);
       submitData.append('descricao', formData.descricao);
@@ -203,17 +164,14 @@ const EditarOferta = () => {
         submitData.append('capacidade_volume', formData.capacidade_volume);
       }
       
-      // Adicionar imagem se selecionada (verificar se é um arquivo)
       if (formData.imagem_caminhao) {
         submitData.append('imagem_caminhao', formData.imagem_caminhao);
       } 
       
-      // Adicionar informação sobre remoção de imagem
       if (removerImagem) {
         submitData.append('remover_imagem', 'true');
       }
 
-      // Enviar com FormData
       await axios.put(`http://localhost:5000/api/ofertas/${id}`, submitData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -222,7 +180,6 @@ const EditarOferta = () => {
       
       setSuccess('Oferta atualizada com sucesso!');
       
-      // Redirecionar após 2 segundos
       setTimeout(() => {
         navigate('/minhas-ofertas');
       }, 2000);
@@ -235,7 +192,6 @@ const EditarOferta = () => {
     setSaving(false);
   };
 
-  // Data mínima (hoje)
   const hoje = new Date().toISOString().split('T')[0];
 
   if (loading) {
@@ -392,7 +348,12 @@ const EditarOferta = () => {
                 </div>
               ) : (
                 <div className="image-preview-container">
-                  <img src={imagePreview} alt="Preview do caminhão" className="image-preview" />
+                  {/* REMOVIDAS AS RESTRIÇÕES DE TAMANHO - AGORA USA TAMANHO MÁXIMO */}
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview do caminhão" 
+                    className="image-preview-fullsize" 
+                  />
                   <div className="image-actions">
                     <button type="button" onClick={removeImage} className="remove-image-btn">
                       ❌ Remover imagem

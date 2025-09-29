@@ -123,6 +123,36 @@
   box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
 }
 
+/* No arquivo CriarOferta.css */
+
+.image-preview-fullsize {
+  max-width: 100%;
+  max-height: 400px; /* ou o tamanho que preferir */
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Se quiser que a imagem ocupe toda a largura disponível */
+.image-upload-container {
+  width: 100%;
+}
+
+.image-preview-fullsize {
+  width: 100%;
+  max-height: 500px; /* Ajuste conforme necessário */
+  object-fit: contain;
+}
+
 .error-message {
   background-color: #fee;
   color: #c33;
@@ -179,6 +209,40 @@
   gap: 20px;
 }
 
+.remove-image-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 15px;
+}
+
+.remove-image-btn:hover {
+  background: #cc0000;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.remove-image-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.remove-image-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .loading {
   font-size: 18px;
   color: #667eea;
@@ -226,6 +290,8 @@
   .btn-secondary {
     width: 100%;
   }
+
+  
 
   .criar-oferta h2 {
     font-size: 24px;
