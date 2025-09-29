@@ -153,6 +153,11 @@
   margin-top: 50px;
 }
 
+.activity-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .dashboard-header {
@@ -194,6 +199,7 @@
   .stat-item {
     flex: 1;
     min-width: 120px;
+    background-color: #667eea;
   }
 
   .stat-number {

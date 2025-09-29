@@ -82,13 +82,19 @@ const Dashboard = () => {
                   {stats.abertos > 0 && (
                     <div className="activity-item">
                       <span className="activity-icon">🟢</span>
-                      <span>Você tem {stats.abertos} oferta{stats.abertos > 1 ? 's' : ''} ativa{stats.abertos > 1 ? 's' : ''}</span>
+                      <span> Você tem {stats.abertos} oferta{stats.abertos > 1 ? 's' : ''} ativa{stats.abertos > 1 ? 's' : ''}</span>
                     </div>
                   )}
                   {stats.em_andamento > 0 && (
                     <div className="activity-item">
                       <span className="activity-icon">🟡</span>
-                      <span>{stats.em_andamento} frete{stats.em_andamento > 1 ? 's' : ''} em andamento</span>
+                      <span> {stats.em_andamento} frete{stats.em_andamento > 1 ? 's' : ''} em andamento</span>
+                    </div>
+                  )}
+                  {stats.concluidos > 0 && (
+                    <div className="activity-item">
+                      <span className="activity-icon">✅</span>
+                      <span> {stats.concluidos} frete{stats.concluidos > 1 ? 's' : ''} concluído{stats.concluidos > 1 ? 's' : ''}</span>
                     </div>
                   )}
                   {stats.abertos === 0 && stats.em_andamento === 0 && (
