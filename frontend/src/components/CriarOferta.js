@@ -64,10 +64,39 @@ const CriarOferta = () => {
         imagem_caminhao: file
       }));
 
-      // Criar preview da imagem
+      // Criar preview da imagem com tamanho limitado
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target.result);
+        const img = new Image();
+        img.onload = () => {
+          // Definir tamanho máximo para a prévia
+          const maxWidth = 400;
+          const maxHeight = 300;
+          
+          let { width, height } = img;
+          
+          // Redimensionar mantendo a proporção
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+          
+          // Criar canvas para redimensionar a imagem
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          setImagePreview(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
       

@@ -1,4 +1,6 @@
 const db = require('../config/database');
+const fs = require('fs');
+const path = require('path');
 
 class Oferta {
   static async create(ofertaData) {
@@ -103,41 +105,55 @@ class Oferta {
       preco, 
       data_disponivel, 
       capacidade_peso, 
-      capacidade_volume 
+      capacidade_volume ,
+      imagem_caminhao
     } = ofertaData;
 
     const [result] = await db.execute(`
       UPDATE ofertas 
       SET origem = ?, destino = ?, descricao = ?, preco = ?,
-          data_disponivel = ?, capacidade_peso = ?, capacidade_volume = ?
+          data_disponivel = ?, capacidade_peso = ?, capacidade_volume = ?, imagem_caminhao = ?
       WHERE id = ? AND usuario_id = ?
     `, [
       origem, destino, descricao, preco,
       data_disponivel, capacidade_peso, capacidade_volume,
-      id, userId
+      imagem_caminhao, id, userId
     ]);
 
     return result.affectedRows > 0;
   }
 
+
     static async delete(id, userId) {
-    // Primeiro buscar a oferta para pegar o nome da imagem
-    const [oferta] = await db.execute(
-      'SELECT imagem_caminhao FROM ofertas WHERE id = ? AND usuario_id = ?',
-      [id, userId]
-    );
+      // Primeiro buscar a oferta para pegar o nome da imagem
+      const [oferta] = await db.execute(
+        'SELECT imagem_caminhao FROM ofertas WHERE id = ? AND usuario_id = ?',
+        [id, userId]
+      );
 
-    const [result] = await db.execute(
-      'DELETE FROM ofertas WHERE id = ? AND usuario_id = ?',
-      [id, userId]
-    );
+      const [result] = await db.execute(
+        'DELETE FROM ofertas WHERE id = ? AND usuario_id = ?',
+        [id, userId]
+      );
 
-    // Retornar também o nome da imagem para deletar o arquivo
-    return {
-      deleted: result.affectedRows > 0,
-      imagem: oferta[0]?.imagem_caminhao || null
-    };
-  }
+      const imagemCaminhao = oferta[0]?.imagem_caminhao || null;
+
+      // Se a imagem existir, deletar o arquivo do sistema de arquivos
+      if (imagemCaminhao) {
+        const imagePath = path.join(__dirname, '..', '..', 'uploads', imagemCaminhao);
+        fs.unlink(imagePath, (err) => {
+          if (err) {
+            console.error(`Erro ao deletar a imagem: ${imagePath}`, err);
+          }
+        });
+      }
+
+  // Retornar o status da exclusão
+  return {
+    deleted: result.affectedRows > 0,
+    imagem: imagemCaminhao
+  };
+}
 
   static async getStats(userId) {
     const [rows] = await db.execute(`

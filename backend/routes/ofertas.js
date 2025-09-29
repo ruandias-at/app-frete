@@ -145,7 +145,8 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       preco,
       data_disponivel,
       capacidade_peso,
-      capacidade_volume
+      capacidade_volume,
+      remover_imagem // ← NOVO CAMPO para indicar remoção de imagem
     } = req.body;
 
     // Validações básicas
@@ -169,6 +170,20 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       });
     }
 
+    // LÓGICA PARA DETERMINAR A IMAGEM FINAL
+    let imagemFinal = ofertaAtual.imagem_caminhao;
+    let imagemParaDeletar = null;
+
+    if (req.file) {
+      // Se enviou nova imagem, usar a nova e marcar a antiga para deletar
+      imagemFinal = req.file.filename;
+      imagemParaDeletar = ofertaAtual.imagem_caminhao;
+    } else if (remover_imagem === 'true') {
+      // Se solicitou remover imagem, setar como null e marcar a antiga para deletar
+      imagemFinal = null;
+      imagemParaDeletar = ofertaAtual.imagem_caminhao;
+    }
+
     const ofertaData = {
       origem: origem.trim(),
       destino: destino.trim(),
@@ -177,7 +192,7 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       data_disponivel,
       capacidade_peso: capacidade_peso ? parseFloat(capacidade_peso) : null,
       capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null,
-      imagem_caminhao: req.file ? req.file.filename : ofertaAtual.imagem_caminhao
+      imagem_caminhao: imagemFinal
     };
 
     const updated = await Oferta.update(req.params.id, ofertaData, req.user.userId);
@@ -191,14 +206,14 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       });
     }
 
-    // Se nova imagem foi enviada, deletar a antiga
-    if (req.file && ofertaAtual.imagem_caminhao) {
-      deleteFile(ofertaAtual.imagem_caminhao);
+    // Deletar imagem antiga se necessário
+    if (imagemParaDeletar) {
+      deleteFile(imagemParaDeletar);
     }
 
     res.json({ 
       message: 'Oferta atualizada com sucesso',
-      imagem_updated: !!req.file
+      imagem_updated: !!req.file || remover_imagem === 'true'
     });
 
   } catch (error) {

@@ -25,6 +25,7 @@ const EditarOferta = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [removerImagem, setRemoverImagem] = useState(false); // Novo estado para controlar remoção de imagem
 
   useEffect(() => {
     // Só busca dados se for fretista
@@ -50,8 +51,6 @@ const EditarOferta = () => {
       const response = await axios.get(`http://localhost:5000/api/ofertas/${id}`);
       const oferta = response.data.oferta;
 
-
-
       // Formatar data para input date
       const dataFormatada = new Date(oferta.data_disponivel).toISOString().split('T')[0];
 
@@ -62,8 +61,17 @@ const EditarOferta = () => {
         preco: oferta.preco || '',
         data_disponivel: dataFormatada,
         capacidade_peso: oferta.capacidade_peso || '',
-        capacidade_volume: oferta.capacidade_volume || ''
+        capacidade_volume: oferta.capacidade_volume || '',
+        imagem_caminhao: '' // Manter vazio para nova imagem
       });
+
+      // Resetar estado de remoção de imagem
+      setRemoverImagem(false);
+
+      // Se houver imagem existente, carregar preview
+      if (oferta.imagem_caminhao) {
+        setImagePreview(`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`);
+      }
 
     } catch (error) {
       if (error.response?.status === 404) {
@@ -107,10 +115,42 @@ const EditarOferta = () => {
         imagem_caminhao: file
       }));
 
-      // Criar preview da imagem
+      // Resetar remoção de imagem se o usuário selecionar uma nova
+      setRemoverImagem(false);
+
+      // Criar preview da imagem com tamanho limitado
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target.result);
+        const img = new Image();
+        img.onload = () => {
+          // Definir tamanho máximo para a prévia
+          const maxWidth = 400;
+          const maxHeight = 300;
+          
+          let { width, height } = img;
+          
+          // Redimensionar mantendo a proporção
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+          
+          // Criar canvas para redimensionar a imagem
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          setImagePreview(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
       
@@ -130,6 +170,7 @@ const EditarOferta = () => {
       imagem_caminhao: null
     }));
     setImagePreview(null);
+    setRemoverImagem(true); // Marcar que a imagem existente deve ser removida
     
     // Limpar o input file
     const fileInput = document.getElementById('imagem_caminhao');
@@ -145,7 +186,39 @@ const EditarOferta = () => {
     setSuccess('');
 
     try {
-      await axios.put(`http://localhost:5000/api/ofertas/${id}`, formData);
+      // Criar FormData para envio de arquivo (se houver nova imagem)
+      const submitData = new FormData();
+      
+      // Adicionar campos de texto
+      submitData.append('origem', formData.origem);
+      submitData.append('destino', formData.destino);
+      submitData.append('descricao', formData.descricao);
+      submitData.append('preco', formData.preco);
+      submitData.append('data_disponivel', formData.data_disponivel);
+      
+      if (formData.capacidade_peso) {
+        submitData.append('capacidade_peso', formData.capacidade_peso);
+      }
+      if (formData.capacidade_volume) {
+        submitData.append('capacidade_volume', formData.capacidade_volume);
+      }
+      
+      // Adicionar imagem se selecionada (verificar se é um arquivo)
+      if (formData.imagem_caminhao) {
+        submitData.append('imagem_caminhao', formData.imagem_caminhao);
+      } 
+      
+      // Adicionar informação sobre remoção de imagem
+      if (removerImagem) {
+        submitData.append('remover_imagem', 'true');
+      }
+
+      // Enviar com FormData
+      await axios.put(`http://localhost:5000/api/ofertas/${id}`, submitData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       
       setSuccess('Oferta atualizada com sucesso!');
       
@@ -155,6 +228,7 @@ const EditarOferta = () => {
       }, 2000);
 
     } catch (error) {
+      console.error('Erro detalhado:', error);
       setError(error.response?.data?.message || 'Erro ao atualizar oferta');
     }
 
