@@ -140,7 +140,7 @@ class Oferta {
 
       // Se a imagem existir, deletar o arquivo do sistema de arquivos
       if (imagemCaminhao) {
-        const imagePath = path.join(__dirname, '..', '..', 'uploads', imagemCaminhao);
+        const imagePath = path.join(__dirname, '..', 'uploads', 'ofertas', imagemCaminhao);
         fs.unlink(imagePath, (err) => {
           if (err) {
             console.error(`Erro ao deletar a imagem: ${imagePath}`, err);
