@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import CatalogoOfertas from './CatalogoOfertas';
 import './Home.css';
 
 const Home = () => {
@@ -11,9 +12,9 @@ const Home = () => {
       <main className="home-content">
         <div className="hero-section">
           <div className="hero-text">
-            <h1>AirFrete</h1>
+            <h1>Sistema de Frete</h1>
             <p className="hero-subtitle">
-              Conectamos clientes e fretistas de forma rápida e segura!
+              Conectamos clientes e fretistas de forma rápida e segura
             </p>
             <p className="hero-description">
               {user 
@@ -33,10 +34,14 @@ const Home = () => {
                       Solicitar Frete
                     </button>
                   ) : (
-                    <button className="cta-button secondary">
-                      Ver Ofertas
-                    </button>
+                    <Link to="/minhas-ofertas" className="cta-button secondary">
+                      Minhas Ofertas
+                    </Link>
                   )}
+                  <Link to="/catalogo-ofertas" className="cta-button secondary">
+                    Ver Ofertas
+                  </Link>
+                  
                 </>
               ) : (
                 <>

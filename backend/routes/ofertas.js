@@ -135,6 +135,24 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Listar todas as ofertas públicas (para clientes)
+router.get('/', async (req, res) => {
+  try {
+    const { origem, destino, preco_max } = req.query;
+    
+    const filters = {};
+    if (origem) filters.origem = origem;
+    if (destino) filters.destino = destino;
+    if (preco_max) filters.preco_max = preco_max;
+
+    const ofertas = await Oferta.findAll(filters);
+    res.json({ ofertas });
+  } catch (error) {
+    console.error('Erro ao buscar ofertas:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
 // Atualizar oferta (apenas o próprio fretista)
 router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, async (req, res) => {
   try {

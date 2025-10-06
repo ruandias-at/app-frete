@@ -10,7 +10,9 @@ import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import CriarOferta from './components/CriarOferta';
 import EditarOferta from './components/EditarOferta';
+import CatalogoOfertas from './components/CatalogoOfertas';
 import MinhasOfertas from './components/MinhasOfertas';
+import DetalhesOferta from './components/DetalhesOferta';
 import './App.css';
 
 function App() {
@@ -27,6 +29,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/catalogo-ofertas" element={<CatalogoOfertas />} />
             
             {/* Rotas protegidas */}
             <Route 

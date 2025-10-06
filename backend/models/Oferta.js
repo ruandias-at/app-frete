@@ -44,7 +44,7 @@ class Oferta {
   static async findAll(filters = {}) {
     let query = `
       SELECT o.*, u.nome as fretista_nome, u.email as fretista_email,
-             f.veiculo, f.area_atuacao
+            f.veiculo, f.area_atuacao
       FROM ofertas o
       JOIN usuarios u ON o.usuario_id = u.id
       LEFT JOIN fretistas f ON u.id = f.usuario_id
@@ -69,6 +69,7 @@ class Oferta {
       params.push(filters.preco_max);
     }
 
+    // Ordenar por mais recentes primeiro
     query += ` ORDER BY o.criado_em DESC`;
 
     const [rows] = await db.execute(query, params);
