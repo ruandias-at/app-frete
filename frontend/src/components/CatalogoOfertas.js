@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Slider from 'react-slick';
 import axios from 'axios';
+import FiltroOfertas from './FiltroOfertas';
 import './CatalogoOfertas.css';
 
-const CatalogoOfertas = () => {
+const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
   const [ofertas, setOfertas] = useState([]);
+  const [ofertasFiltradas, setOfertasFiltradas] = useState([]);
+  const [filtrosAtivos, setFiltrosAtivos] = useState(filtros);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -14,16 +17,67 @@ const CatalogoOfertas = () => {
     fetchOfertas();
   }, []);
 
+
+  // Aplicar filtros iniciais após carregar as ofertas
+  useEffect(() => {
+    if (ofertas.length > 0) {
+      aplicarFiltros(filtros);
+    }
+  }, [ofertas]); // Remove 'filtros' das dependências
+
   const fetchOfertas = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/ofertas');
-      setOfertas(response.data.ofertas);
+      const todasOfertas = response.data.ofertas;
+      setOfertas(todasOfertas);
+      setOfertasFiltradas(limit ? todasOfertas.slice(0, limit) : todasOfertas);
     } catch (error) {
       console.error('Erro ao buscar ofertas:', error);
       setError('Erro ao carregar ofertas');
     } finally {
       setLoading(false);
     }
+  };
+
+  const aplicarFiltros = (filtros) => {
+    setFiltrosAtivos(filtros);
+    
+    let resultado = [...ofertas];
+
+    // Filtrar por origem
+    if (filtros.origem) {
+      resultado = resultado.filter(oferta => 
+        oferta.origem.toLowerCase().includes(filtros.origem.toLowerCase())
+      );
+    }
+
+    // Filtrar por destino
+    if (filtros.destino) {
+      resultado = resultado.filter(oferta => 
+        oferta.destino.toLowerCase().includes(filtros.destino.toLowerCase())
+      );
+    }
+
+    // Filtrar por preço mínimo
+    if (filtros.preco_min) {
+      resultado = resultado.filter(oferta => 
+        parseFloat(oferta.preco) >= parseFloat(filtros.preco_min)
+      );
+    }
+
+    // Filtrar por preço máximo
+    if (filtros.preco_max) {
+      resultado = resultado.filter(oferta => 
+        parseFloat(oferta.preco) <= parseFloat(filtros.preco_max)
+      );
+    }
+
+    setOfertasFiltradas(limit ? resultado.slice(0, limit) : resultado);
+  };
+
+  const limparFiltros = () => {
+    setFiltrosAtivos({});
+    setOfertasFiltradas(limit ? ofertas.slice(0, limit) : ofertas);
   };
 
   const formatCurrency = (value) => {
@@ -47,11 +101,11 @@ const CatalogoOfertas = () => {
 
   const settings = {
     dots: true,
-    infinite: ofertas.length > 3,
+    infinite: ofertasFiltradas.length > 3,
     speed: 500,
-    slidesToShow: 3,
+    slidesToShow: Math.min(3, ofertasFiltradas.length),
     slidesToScroll: 1,
-    autoplay: true,
+    autoplay: ofertasFiltradas.length > 3,
     autoplaySpeed: 3000,
     pauseOnHover: true,
     responsive: [
@@ -109,6 +163,7 @@ const CatalogoOfertas = () => {
     );
   }
 
+
   return (
     <section className="catalogo-section">
       <div className="catalogo-container">
@@ -116,11 +171,34 @@ const CatalogoOfertas = () => {
           <h2 className="catalogo-title">Ofertas Disponíveis</h2>
           <p className="catalogo-subtitle">
             Confira as melhores ofertas de frete disponíveis agora
+            {Object.keys(filtrosAtivos).length > 0 && 
+              ` (${ofertasFiltradas.length} ${ofertasFiltradas.length === 1 ? 'resultado' : 'resultados'})`
+            }
           </p>
         </div>
 
-        <Slider {...settings} className="ofertas-carousel">
-          {ofertas.map((oferta) => (
+        {/* Filtros */}
+        <FiltroOfertas 
+          onFilter={aplicarFiltros}
+          onClearFilters={limparFiltros}
+        />
+
+        {/* Mensagem quando não há resultados nos filtros */}
+        {ofertasFiltradas.length === 0 && Object.keys(filtrosAtivos).length > 0 && (
+          <div className="no-results">
+            <div className="no-results-icon">🔍</div>
+            <h3>Nenhuma oferta encontrada</h3>
+            <p>Tente ajustar os filtros para ver mais resultados</p>
+            <button onClick={limparFiltros} className="btn-limpar-filtros">
+              Limpar Filtros
+            </button>
+          </div>
+        )}
+
+        {/* Carrossel */}
+        {ofertasFiltradas.length > 0 && (
+          <Slider {...settings} className="ofertas-carousel">
+            {ofertasFiltradas.map((oferta) => (
             <div key={oferta.id} className="carousel-item">
               <div 
                 className="oferta-card-catalogo"
@@ -199,6 +277,7 @@ const CatalogoOfertas = () => {
             </div>
           ))}
         </Slider>
+        )}
       </div>
     </section>
   );

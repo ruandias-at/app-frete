@@ -101,15 +101,16 @@ router.get('/minhas', authenticateToken, checkFretista, async (req, res) => {
   }
 });
 
-// Listar todas as ofertas públicas (para clientes)
-router.get('/', authenticateToken, async (req, res) => {
+// Listar todas as ofertas públicas (ROTA PÚBLICA - SEM AUTENTICAÇÃO)
+router.get('/', async (req, res) => {
   try {
-    const { origem, destino, preco_max } = req.query;
+    const { origem, destino, preco_max, preco_min } = req.query;
     
     const filters = {};
     if (origem) filters.origem = origem;
     if (destino) filters.destino = destino;
     if (preco_max) filters.preco_max = preco_max;
+    if (preco_min) filters.preco_min = preco_min;
 
     const ofertas = await Oferta.findAll(filters);
     res.json({ ofertas });
@@ -119,8 +120,8 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Buscar oferta específica
-router.get('/:id', authenticateToken, async (req, res) => {
+// Buscar oferta específica (ROTA PÚBLICA)
+router.get('/:id', async (req, res) => {
   try {
     const oferta = await Oferta.findById(req.params.id);
     

@@ -64,6 +64,11 @@ class Oferta {
       params.push(`%${filters.destino}%`);
     }
 
+    if (filters.preco_min) {
+    query += ` AND o.preco >= ?`;
+    params.push(filters.preco_min);
+  }
+
     if (filters.preco_max) {
       query += ` AND o.preco <= ?`;
       params.push(filters.preco_max);

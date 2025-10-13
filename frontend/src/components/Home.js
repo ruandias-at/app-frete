@@ -38,9 +38,6 @@ const Home = () => {
                       Minhas Ofertas
                     </Link>
                   )}
-                  <Link to="/catalogo-ofertas" className="cta-button secondary">
-                    Ver Ofertas
-                  </Link>
                   
                 </>
               ) : (
@@ -61,6 +58,11 @@ const Home = () => {
               🚛
             </div>
           </div>
+        </div>
+
+        <div className="catalog-section">
+          
+          <CatalogoOfertas limit={4} />
         </div>
 
         <div className="features-section">
@@ -88,28 +90,6 @@ const Home = () => {
               <div className="feature-icon">✅</div>
               <h3>Finalize</h3>
               <p>Acompanhe o transporte e finalize o serviço com segurança</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="stats-section">
-          <h2>Números da Plataforma</h2>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-number">1,250+</div>
-              <div className="stat-label">Fretes Realizados</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-number">350+</div>
-              <div className="stat-label">Fretistas Cadastrados</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-number">98%</div>
-              <div className="stat-label">Satisfação</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-number">24h</div>
-              <div className="stat-label">Suporte</div>
             </div>
           </div>
         </div>
