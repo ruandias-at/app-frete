@@ -101,3 +101,39 @@ CREATE TABLE password_reset_tokens (
 -- Atualização para imagem do caminhão
 ALTER TABLE ofertas 
 ADD COLUMN imagem_caminhao VARCHAR(255) AFTER capacidade_volume;
+
+-- Tabela de conversas
+CREATE TABLE IF NOT EXISTS conversas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario1_id INT NOT NULL,
+  usuario2_id INT NOT NULL,
+  oferta_id INT,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario1_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  FOREIGN KEY (usuario2_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  FOREIGN KEY (oferta_id) REFERENCES ofertas(id) ON DELETE SET NULL,
+  UNIQUE KEY uk_conversa (usuario1_id, usuario2_id, oferta_id),
+  INDEX idx_usuario1 (usuario1_id),
+  INDEX idx_usuario2 (usuario2_id),
+  INDEX idx_atualizado (atualizado_em)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabela de mensagens
+CREATE TABLE IF NOT EXISTS mensagens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  conversa_id INT NOT NULL,
+  remetente_id INT NOT NULL,
+  destinatario_id INT NOT NULL,
+  conteudo TEXT NOT NULL,
+  lida BOOLEAN DEFAULT FALSE,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (conversa_id) REFERENCES conversas(id) ON DELETE CASCADE,
+  FOREIGN KEY (remetente_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  FOREIGN KEY (destinatario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  INDEX idx_conversa (conversa_id),
+  INDEX idx_remetente (remetente_id),
+  INDEX idx_destinatario (destinatario_id),
+  INDEX idx_lida (lida),
+  INDEX idx_criado (criado_em)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

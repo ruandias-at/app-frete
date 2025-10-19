@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Configurar axios com o token
+      // Configurar axios com o token GLOBALMENTE
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       // Buscar dados do usuário
@@ -39,12 +39,17 @@ export const AuthProvider = ({ children }) => {
 
       const { token, user } = response.data;
       
+      console.log('🔑 Token recebido:', token?.substring(0, 20) + '...');
+      console.log('👤 User:', user);
+      
       // Salvar no localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       
       // Configurar axios
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      console.log('✅ Token configurado no axios');
       
       setUser(user);
       
@@ -61,7 +66,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = { nome, email, senha, tipo };
       
-      // Adicionar placa apenas se for fretista
       if (tipo === 'fretista' && placa) {
         userData.placa = placa;
       }

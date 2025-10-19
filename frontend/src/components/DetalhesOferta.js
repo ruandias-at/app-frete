@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useChat } from '../context/ChatContext';
 import axios from 'axios';
 import './DetalhesOferta.css';
 
 const DetalhesOferta = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { iniciarConversa } = useChat();
   const navigate = useNavigate();
   const [oferta, setOferta] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,12 +22,13 @@ const DetalhesOferta = () => {
     try {
       const response = await axios.get(`http://localhost:5000/api/ofertas/${id}`);
       setOferta(response.data.oferta);
+      setError('');
     } catch (error) {
       console.error('Erro ao buscar oferta:', error);
       if (error.response?.status === 404) {
         setError('Oferta não encontrada.');
       } else {
-        setError('Erro ao carregar detalhes da oferta.');
+        setError('Erro ao carregar detalhes da oferta. Tente novamente mais tarde.');
       }
     } finally {
       setLoading(false);
@@ -47,8 +50,36 @@ const DetalhesOferta = () => {
     });
   };
 
-  const handleMensagem = () => {
-    alert('Funcionalidade de mensagem em breve!');
+  const handleMensagem = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (isPropriaOferta) {
+      alert('Você não pode enviar mensagem para sua própria oferta.');
+      return;
+    }
+
+    try {
+      console.log('Iniciando conversa com:', {
+        destinatarioId: oferta.usuario_id,
+        ofertaId: oferta.id,
+        usuarioAtual: user.userId
+      });
+
+      // Iniciar conversa com o fretista (dono da oferta)
+      const conversaId = await iniciarConversa(oferta.usuario_id, oferta.id);
+      
+      console.log('Conversa criada com ID:', conversaId);
+      
+      // Navegar para o chat com a conversa iniciada
+      navigate(`/chat/${conversaId}`);
+    } catch (error) {
+      console.error('Erro detalhado ao iniciar conversa:', error);
+      console.error('Response:', error.response);
+      alert(`Erro ao iniciar conversa: ${error.response?.data?.message || error.message}`);
+    }
   };
 
   if (loading) {
