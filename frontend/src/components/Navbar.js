@@ -44,12 +44,21 @@ const Navbar = () => {
             {user ? (
               <>
                 <Link 
-                  to="/dashboard" 
+                  to="/chat"
                   className="nav-link"
                   onClick={closeMenu}
                 >
-                  Dashboard
+                  Chat
                 </Link>
+                {user.tipo === 'fretista' ? (
+                  <Link 
+                    to="/dashboard" 
+                    className="nav-link"
+                    onClick={closeMenu}
+                  >
+                    Dashboard
+                  </Link>
+                ) : (null)}
                 
                 <div className="user-info">
                   <span className="user-greeting">

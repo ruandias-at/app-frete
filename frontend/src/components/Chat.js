@@ -5,6 +5,7 @@ import { useChat } from '../context/ChatContext';
 import './Chat.css';
 
 const Chat = () => {
+
   const { conversaId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -27,6 +28,16 @@ const Chat = () => {
   const [enviando, setEnviando] = useState(false);
   const mensagensEndRef = useRef(null);
   const digitandoTimeoutRef = useRef(null);
+
+  useEffect(() => {
+      // Adiciona classe ao body quando o componente monta
+      document.body.classList.add('no-scroll');
+      
+      // Remove a classe quando o componente desmonta
+      return () => {
+        document.body.classList.remove('no-scroll');
+      };
+    }, []);
 
   // Carregar conversa ao montar ou quando conversaId muda
   useEffect(() => {

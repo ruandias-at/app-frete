@@ -64,8 +64,7 @@ const Dashboard = () => {
             <h3>Ações Rápidas:</h3>
             {user.tipo === 'cliente' ? (
               <div className="action-buttons">
-                <button className="action-btn">Buscar Fretes</button>
-                <button className="action-btn">Minhas Solicitações</button>
+                <button className="action-btn" id='buscar-fretes'>Buscar Fretes</button>
               </div>
             ) : (
               <div className="action-buttons">

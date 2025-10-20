@@ -1,3 +1,13 @@
+/* No CSS global */
+.no-scroll {
+  overflow: hidden;
+}
+
+/* Resto das páginas mantém o scroll normal */
+body {
+  overflow: auto;
+}
+
 .chat-container {
   display: grid;
   grid-template-columns: 350px 1fr;
@@ -164,6 +174,7 @@
   display: flex;
   flex-direction: column;
   background: white;
+  height: 90vh; /* ou altura fixa */
 }
 
 .chat-header {

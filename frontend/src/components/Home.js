@@ -24,32 +24,18 @@ const Home = () => {
             </p>
             
             <div className="hero-actions">
-              {user ? (
-                <>
-                  <Link to="/dashboard" className="cta-button primary">
-                    Ir para Dashboard
-                  </Link>
-                  {user.tipo === 'cliente' ? (
-                    <button className="cta-button secondary">
-                      Solicitar Frete
-                    </button>
-                  ) : (
-                    <Link to="/minhas-ofertas" className="cta-button secondary">
-                      Minhas Ofertas
-                    </Link>
-                  )}
-                  
-                </>
-              ) : (
-                <>
-                  <Link to="/register" className="cta-button primary">
-                    Começar Agora
-                  </Link>
-                  <Link to="/login" className="cta-button secondary">
-                    Já tenho conta
-                  </Link>
-                </>
-              )}
+              
+              {!user && (
+          <>
+            <Link to="/register" className="cta-button primary">
+              Começar Agora
+            </Link>
+            <Link to="/login" className="cta-button secondary">
+              Já tenho conta
+            </Link>
+          </>
+        )}
+
             </div>
           </div>
           
