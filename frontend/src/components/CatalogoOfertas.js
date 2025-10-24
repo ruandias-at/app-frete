@@ -13,19 +13,8 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchOfertas();
-  }, [fetchOfertas]);
 
-
-  // Aplicar filtros iniciais após carregar as ofertas
-  useEffect(() => {
-    if (ofertas.length > 0) {
-      aplicarFiltros(filtros);
-    }
-  }, [ofertas]); // Remove 'filtros' das dependências
-
-  const fetchOfertas = useCallback(async () => {
+  const fetchOfertas = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/ofertas');
       const todasOfertas = response.data.ofertas;
@@ -37,7 +26,22 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
+
+
+  useEffect(() => {
+    fetchOfertas();
+  }, [fetchOfertas]);
+
+
+  // Aplicar filtros iniciais após carregar as ofertas
+  useEffect(() => {
+    if (ofertas.length > 0) {
+      aplicarFiltros(filtros);
+    }
+  }, [ofertas, aplicarFiltros, filtros]); // Remove 'filtros' das dependências
+
+  
 
   const aplicarFiltros = (filtros) => {
     setFiltrosAtivos(filtros);

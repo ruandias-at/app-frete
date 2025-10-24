@@ -14,7 +14,7 @@ const Dashboard = () => {
     if (user) {
       fetchStats();
     }
-  }, [user]);
+  }, [user, fetchStats]);
 
   const fetchStats = async () => {
     try {

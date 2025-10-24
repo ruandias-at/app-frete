@@ -16,7 +16,7 @@ const DetalhesOferta = () => {
 
   useEffect(() => {
     fetchOferta();
-  }, [id]);
+  }, [id, fetchOferta]);
 
   const fetchOferta = async () => {
     try {

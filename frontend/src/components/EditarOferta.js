@@ -33,7 +33,7 @@ const EditarOferta = () => {
     } else {
       setLoading(false);
     }
-  }, [id, user]);
+  }, [id, user, fetchOferta]);
 
   if (user?.tipo !== 'fretista') {
     return (

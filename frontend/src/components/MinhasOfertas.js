@@ -7,7 +7,6 @@ import './MinhasOfertas.css';
 
 const MinhasOfertas = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [ofertas, setOfertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

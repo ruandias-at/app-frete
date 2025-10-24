@@ -115,7 +115,7 @@ export const ChatProvider = ({ children }) => {
         newSocket.disconnect();
       };
     }
-  }, [user]);
+  }, [user, buscarConversas, conversaAtual, buscarMensagensNaoLidas, socket, marcarComoLida]);
 
   // Buscar conversas do usuário
   const buscarConversas = useCallback(async () => {
@@ -234,7 +234,7 @@ export const ChatProvider = ({ children }) => {
       buscarConversas();
       buscarMensagensNaoLidas();
     }
-  }, [user, buscarConversas]);
+  }, [user, buscarConversas, buscarMensagensNaoLidas]);
 
   const value = {
     conversas,
