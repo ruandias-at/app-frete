@@ -111,17 +111,6 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  // Marcar mensagens como lidas
-  const marcarComoLida = useCallback(async (conversaId) => {
-    try {
-      await axios.patch(`${process.env.REACT_APP_API_URL}/api/mensagens/conversa/${conversaId}/marcar-lida`);
-      await buscarMensagensNaoLidas();
-      await buscarConversas();
-    } catch (error) {
-      console.error('Erro ao marcar como lida:', error);
-    }
-  }, [buscarConversas, buscarMensagensNaoLidas]);
-
   // Buscar total de mensagens não lidas
   const buscarMensagensNaoLidas = useCallback(async () => {
     if (!user) return;
@@ -133,6 +122,17 @@ export const ChatProvider = ({ children }) => {
       console.error('Erro ao buscar não lidas:', error);
     }
   }, [user]);
+  
+  // Marcar mensagens como lidas
+  const marcarComoLida = useCallback(async (conversaId) => {
+    try {
+      await axios.patch(`${process.env.REACT_APP_API_URL}/api/mensagens/conversa/${conversaId}/marcar-lida`);
+      await buscarMensagensNaoLidas();
+      await buscarConversas();
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error);
+    }
+  }, [buscarConversas, buscarMensagensNaoLidas]);
 
   // Buscar conversas e não lidas quando usuário loga
   useEffect(() => {
