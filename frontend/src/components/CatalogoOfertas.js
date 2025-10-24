@@ -14,7 +14,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
   const navigate = useNavigate();
 
 
-  const fetchOfertas = async () => {
+  const fetchOfertas = useCallback(async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas`);
       const todasOfertas = response.data.ofertas;
@@ -26,7 +26,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
 
   useEffect(() => {
