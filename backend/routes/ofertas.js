@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken } from '../middlewares/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 import Oferta from '../models/Oferta.js';
 import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
