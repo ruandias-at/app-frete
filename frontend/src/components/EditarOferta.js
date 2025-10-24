@@ -27,15 +27,6 @@ const EditarOferta = () => {
   const [success, setSuccess] = useState('');
   const [removerImagem, setRemoverImagem] = useState(false);
 
-  if (user?.tipo !== 'fretista') {
-    return (
-      <div className="access-denied">
-        <h2>Acesso Negado</h2>
-        <p>Apenas fretistas podem editar ofertas de frete.</p>
-      </div>
-    );
-  }
-
   const fetchOferta = useCallback(async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/${id}`);
@@ -190,6 +181,16 @@ const EditarOferta = () => {
 
     setSaving(false);
   };
+
+  if (user?.tipo !== 'fretista') {
+    return (
+      <div className="access-denied">
+        <h2>Acesso Negado</h2>
+        <p>Apenas fretistas podem editar ofertas de frete.</p>
+      </div>
+    );
+  }
+
 
   const hoje = new Date().toISOString().split('T')[0];
 
