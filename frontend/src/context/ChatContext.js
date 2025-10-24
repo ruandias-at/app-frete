@@ -120,7 +120,7 @@ export const ChatProvider = ({ children }) => {
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }
-  }, []);
+  }, [buscarConversas, buscarMensagensNaoLidas]);
 
   // Buscar total de mensagens não lidas
   const buscarMensagensNaoLidas = useCallback(async () => {
