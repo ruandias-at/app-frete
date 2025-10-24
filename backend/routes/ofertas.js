@@ -1,8 +1,8 @@
-import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
-import Oferta from '../models/Oferta.js';
-import fs from 'fs';
-import { v2 as cloudinary } from 'cloudinary';
+const express = require('express');
+const Oferta = require('../models/Oferta');
+const authenticateToken = require('../middleware/auth');
+const { uploadWithErrorHandling } = require('../config/cloudinary.js');
+const cloudinary = require('../config/cloudinary.js'); // Importa o cloudinary configurado
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ const checkFretista = (req, res, next) => {
 };
 
 // Criar nova oferta (apenas fretistas)
-router.post('/', authenticateToken, checkFretista, async (req, res) => {
+router.post('/', authenticateToken, checkFretista, uploadWithErrorHandling, async (req, res) => {
   try {
     const {
       origem,
@@ -52,18 +52,6 @@ router.post('/', authenticateToken, checkFretista, async (req, res) => {
       });
     }
 
-    // 🔹 Upload para Cloudinary (se houver imagem)
-    let imagemUrl = null;
-    if (req.file) {
-      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'ofertas_fretes'
-      });
-      imagemUrl = uploadResult.secure_url;
-
-      // Apaga o arquivo local temporário
-      fs.unlinkSync(req.file.path);
-    }
-
     // Cria a oferta
     const ofertaData = {
       usuario_id: req.user.userId,
@@ -74,7 +62,9 @@ router.post('/', authenticateToken, checkFretista, async (req, res) => {
       data_disponivel,
       capacidade_peso: capacidade_peso ? parseFloat(capacidade_peso) : null,
       capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null,
-      imagem_caminhao: imagemUrl // agora salva a URL do Cloudinary
+      // Agora usa req.file do CloudinaryStorage
+      imagem_caminhao: req.file ? req.file.path : null,
+      imagem_public_id: req.file ? req.file.filename : null
     };
 
     // 🔸 Inserir no banco
@@ -138,23 +128,16 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Listar todas as ofertas públicas (para clientes)
-router.get('/', async (req, res) => {
+// Função para deletar imagem do Cloudinary
+const deleteCloudinaryImage = async (publicId) => {
   try {
-    const { origem, destino, preco_max } = req.query;
-    
-    const filters = {};
-    if (origem) filters.origem = origem;
-    if (destino) filters.destino = destino;
-    if (preco_max) filters.preco_max = preco_max;
-
-    const ofertas = await Oferta.findAll(filters);
-    res.json({ ofertas });
+    if (publicId) {
+      await cloudinary.uploader.destroy(publicId);
+    }
   } catch (error) {
-    console.error('Erro ao buscar ofertas:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error('Erro ao deletar imagem do Cloudinary:', error);
   }
-});
+};
 
 // Atualizar oferta (apenas o próprio fretista)
 router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, async (req, res) => {
@@ -167,14 +150,11 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       data_disponivel,
       capacidade_peso,
       capacidade_volume,
-      remover_imagem // ← NOVO CAMPO para indicar remoção de imagem
+      remover_imagem // Campo para indicar remoção de imagem
     } = req.body;
 
     // Validações básicas
     if (!origem || !destino || !preco || !data_disponivel) {
-      if (req.file) {
-        deleteFile(req.file.filename);
-      }
       return res.status(400).json({ 
         message: 'Origem, destino, preço e data são obrigatórios' 
       });
@@ -183,9 +163,6 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
     // Buscar oferta atual para pegar imagem antiga
     const ofertaAtual = await Oferta.findById(req.params.id);
     if (!ofertaAtual || ofertaAtual.usuario_id !== req.user.userId) {
-      if (req.file) {
-        deleteFile(req.file.filename);
-      }
       return res.status(404).json({ 
         message: 'Oferta não encontrada ou você não tem permissão para editá-la' 
       });
@@ -193,16 +170,19 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
 
     // LÓGICA PARA DETERMINAR A IMAGEM FINAL
     let imagemFinal = ofertaAtual.imagem_caminhao;
+    let imagemPublicId = ofertaAtual.imagem_public_id;
     let imagemParaDeletar = null;
 
     if (req.file) {
       // Se enviou nova imagem, usar a nova e marcar a antiga para deletar
-      imagemFinal = req.file.filename;
-      imagemParaDeletar = ofertaAtual.imagem_caminhao;
+      imagemFinal = req.file.path;
+      imagemPublicId = req.file.filename;
+      imagemParaDeletar = ofertaAtual.imagem_public_id;
     } else if (remover_imagem === 'true') {
       // Se solicitou remover imagem, setar como null e marcar a antiga para deletar
       imagemFinal = null;
-      imagemParaDeletar = ofertaAtual.imagem_caminhao;
+      imagemPublicId = null;
+      imagemParaDeletar = ofertaAtual.imagem_public_id;
     }
 
     const ofertaData = {
@@ -213,23 +193,21 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       data_disponivel,
       capacidade_peso: capacidade_peso ? parseFloat(capacidade_peso) : null,
       capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null,
-      imagem_caminhao: imagemFinal
+      imagem_caminhao: imagemFinal,
+      imagem_public_id: imagemPublicId
     };
 
     const updated = await Oferta.update(req.params.id, ofertaData, req.user.userId);
 
     if (!updated) {
-      if (req.file) {
-        deleteFile(req.file.filename);
-      }
       return res.status(404).json({ 
         message: 'Oferta não encontrada ou você não tem permissão para editá-la' 
       });
     }
 
-    // Deletar imagem antiga se necessário
+    // Deletar imagem antiga do Cloudinary se necessário
     if (imagemParaDeletar) {
-      deleteFile(imagemParaDeletar);
+      await deleteCloudinaryImage(imagemParaDeletar);
     }
 
     res.json({ 
@@ -238,9 +216,6 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
     });
 
   } catch (error) {
-    if (req.file) {
-      deleteFile(req.file.filename);
-    }
     console.error('Erro ao atualizar oferta:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
@@ -276,10 +251,10 @@ router.patch('/:id/status', authenticateToken, checkFretista, async (req, res) =
 // Excluir oferta
 router.delete('/:id', authenticateToken, checkFretista, async (req, res) => {
   try {
-    // Buscar oferta para pegar nome da imagem antes de deletar
+    // Buscar oferta para pegar public_id da imagem antes de deletar
     const oferta = await Oferta.findById(req.params.id);
-    if (oferta && oferta.usuario_id === req.user.userId && oferta.imagem_caminhao) {
-      deleteFile(oferta.imagem_caminhao);
+    if (oferta && oferta.usuario_id === req.user.userId && oferta.imagem_public_id) {
+      await deleteCloudinaryImage(oferta.imagem_public_id);
     }
 
     const deleted = await Oferta.delete(req.params.id, req.user.userId);
