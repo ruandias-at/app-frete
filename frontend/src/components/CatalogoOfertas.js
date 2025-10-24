@@ -16,7 +16,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
 
   const fetchOfertas = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/ofertas');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas`);
       const todasOfertas = response.data.ofertas;
       setOfertas(todasOfertas);
       setOfertasFiltradas(limit ? todasOfertas.slice(0, limit) : todasOfertas);
@@ -212,7 +212,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
                 <div className="oferta-image-container">
                   {oferta.imagem_caminhao ? (
                     <img
-                      src={`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`}
+                      src={`${process.env.REACT_APP_API_URL}/uploads/ofertas/${oferta.imagem_caminhao}`}
                       alt={`Caminhão - ${oferta.origem} para ${oferta.destino}`}
                       className="oferta-image"
                       onError={(e) => {

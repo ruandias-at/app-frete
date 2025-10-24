@@ -20,7 +20,7 @@ const Dashboard = () => {
     try {
       if (user.tipo === 'fretista') {
         // Buscar estatísticas de ofertas para fretistas
-        const response = await axios.get('http://localhost:5000/api/ofertas/stats/resumo');
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/stats/resumo`);
         setStats(response.data.stats);
       } else {
         // Para clientes, você pode implementar estatísticas de solicitações no futuro

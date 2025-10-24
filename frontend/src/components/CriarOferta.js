@@ -152,7 +152,7 @@ const CriarOferta = () => {
         submitData.append('imagem_caminhao', formData.imagem_caminhao);
       }
 
-      await axios.post('http://localhost:5000/api/ofertas', submitData, {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/ofertas`, submitData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

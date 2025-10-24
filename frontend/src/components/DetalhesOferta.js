@@ -14,13 +14,9 @@ const DetalhesOferta = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchOferta();
-  }, [id, fetchOferta]);
-
   const fetchOferta = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/ofertas/${id}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/${id}`);
       setOferta(response.data.oferta);
       setError('');
     } catch (error) {
@@ -34,6 +30,10 @@ const DetalhesOferta = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchOferta();
+  }, [id, fetchOferta]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
