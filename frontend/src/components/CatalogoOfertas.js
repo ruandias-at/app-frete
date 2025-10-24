@@ -26,7 +26,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [limit]);
 
 
   useEffect(() => {
