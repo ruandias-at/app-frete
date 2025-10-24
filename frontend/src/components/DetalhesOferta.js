@@ -14,7 +14,7 @@ const DetalhesOferta = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchOferta = async () => {
+  const fetchOferta = useCallback(async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/${id}`);
       setOferta(response.data.oferta);
@@ -29,7 +29,7 @@ const DetalhesOferta = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchOferta();

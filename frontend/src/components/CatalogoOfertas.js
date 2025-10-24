@@ -31,19 +31,9 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
 
   useEffect(() => {
     fetchOfertas();
-  }, [fetchOfertas]);
+  }, [fetchOfertas]);  
 
-
-  // Aplicar filtros iniciais após carregar as ofertas
-  useEffect(() => {
-    if (ofertas.length > 0) {
-      aplicarFiltros(filtros);
-    }
-  }, [ofertas, aplicarFiltros, filtros]); // Remove 'filtros' das dependências
-
-  
-
-  const aplicarFiltros = (filtros) => {
+  const aplicarFiltros = useCallback((filtros) => {
     setFiltrosAtivos(filtros);
     
     let resultado = [...ofertas];
@@ -77,7 +67,14 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     }
 
     setOfertasFiltradas(limit ? resultado.slice(0, limit) : resultado);
-  };
+  }, [limit, ofertas]);
+
+  // Aplicar filtros iniciais após carregar as ofertas
+  useEffect(() => {
+    if (ofertas.length > 0) {
+      aplicarFiltros(filtros);
+    }
+  }, [ofertas, aplicarFiltros, filtros]); // Remove 'filtros' das dependências
 
   const limparFiltros = () => {
     setFiltrosAtivos({});

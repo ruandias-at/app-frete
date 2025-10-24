@@ -27,14 +27,6 @@ const EditarOferta = () => {
   const [success, setSuccess] = useState('');
   const [removerImagem, setRemoverImagem] = useState(false);
 
-  useEffect(() => {
-    if (user?.tipo === 'fretista') {
-      fetchOferta();
-    } else {
-      setLoading(false);
-    }
-  }, [id, user, fetchOferta]);
-
   if (user?.tipo !== 'fretista') {
     return (
       <div className="access-denied">
@@ -44,7 +36,7 @@ const EditarOferta = () => {
     );
   }
 
-  const fetchOferta = async () => {
+  const fetchOferta = useCallback(async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/${id}`);
       const oferta = response.data.oferta;
@@ -78,7 +70,15 @@ const EditarOferta = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+  
+  useEffect(() => {
+    if (user?.tipo === 'fretista') {
+      fetchOferta();
+    } else {
+      setLoading(false);
+    }
+  }, [id, user, fetchOferta]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
