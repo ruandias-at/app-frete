@@ -15,7 +15,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
 
   useEffect(() => {
     fetchOfertas();
-  }, []);
+  }, [fetchOfertas]);
 
 
   // Aplicar filtros iniciais após carregar as ofertas
@@ -25,7 +25,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     }
   }, [ofertas]); // Remove 'filtros' das dependências
 
-  const fetchOfertas = async () => {
+  const fetchOfertas = useCallback(async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/ofertas');
       const todasOfertas = response.data.ofertas;
@@ -37,7 +37,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const aplicarFiltros = (filtros) => {
     setFiltrosAtivos(filtros);
