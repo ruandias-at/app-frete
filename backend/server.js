@@ -15,7 +15,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: 'http://localhost:3000', // Frontend URL
+    origin: 'https://frontend-production-e5e3.up.railway.app/', // Frontend URL
     methods: ['GET', 'POST'],
     credentials: true
   }

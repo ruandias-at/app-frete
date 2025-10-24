@@ -2,6 +2,9 @@ const express = require('express');
 const Oferta = require('../models/Oferta');
 const authenticateToken = require('../middleware/auth');
 const { uploadWithErrorHandling, deleteFile } = require('../middleware/upload');
+
+import { upload } from '../config/cloudinary.js';
+
 const router = express.Router();
 
 // Middleware para verificar se é fretista
@@ -13,7 +16,7 @@ const checkFretista = (req, res, next) => {
 };
 
 // Criar nova oferta (apenas fretistas)
-router.post('/', authenticateToken, checkFretista, uploadWithErrorHandling, async (req, res) => {
+router.post('/', authenticateToken, checkFretista, upload.single('imagem_caminhao'), async (req, res) => {
   try {
     const {
       origem,
@@ -25,41 +28,44 @@ router.post('/', authenticateToken, checkFretista, uploadWithErrorHandling, asyn
       capacidade_volume
     } = req.body;
 
-    // Validações básicas
+    // 🔸 Validações básicas
     if (!origem || !destino || !preco || !data_disponivel) {
-      // Se houve upload de imagem mas deu erro na validação, deletar arquivo
-      if (req.file) {
-        deleteFile(req.file.filename);
-      }
       return res.status(400).json({ 
         message: 'Origem, destino, preço e data são obrigatórios' 
       });
     }
 
-    // Validar preço
+    // 🔸 Validar preço
     if (isNaN(preco) || preco <= 0) {
-      if (req.file) {
-        deleteFile(req.file.filename);
-      }
       return res.status(400).json({ 
         message: 'Preço deve ser um número válido maior que zero' 
       });
     }
 
-    // Validar data (não pode ser no passado)
+    // 🔸 Validar data (não pode ser no passado)
     const dataDisponivel = new Date(data_disponivel);
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
     if (dataDisponivel < hoje) {
-      if (req.file) {
-        deleteFile(req.file.filename);
-      }
       return res.status(400).json({ 
         message: 'Data disponível não pode ser no passado' 
       });
     }
 
+    // 🔹 Upload para Cloudinary (se houver imagem)
+    let imagemUrl = null;
+    if (req.file) {
+      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'ofertas_fretes'
+      });
+      imagemUrl = uploadResult.secure_url;
+
+      // Apaga o arquivo local temporário
+      fs.unlinkSync(req.file.path);
+    }
+
+    // Cria a oferta
     const ofertaData = {
       usuario_id: req.user.userId,
       origem: origem.trim(),
@@ -69,22 +75,19 @@ router.post('/', authenticateToken, checkFretista, uploadWithErrorHandling, asyn
       data_disponivel,
       capacidade_peso: capacidade_peso ? parseFloat(capacidade_peso) : null,
       capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null,
-      imagem_caminhao: req.file ? req.file.filename : null
+      imagem_caminhao: imagemUrl // agora salva a URL do Cloudinary
     };
 
+    // 🔸 Inserir no banco
     const ofertaId = await Oferta.create(ofertaData);
 
     res.status(201).json({
       message: 'Oferta criada com sucesso',
       ofertaId,
-      imagem_uploaded: !!req.file
+      imagem_url: req.file ? req.file.path : null,
     });
 
   } catch (error) {
-    // Em caso de erro, deletar arquivo se foi enviado
-    if (req.file) {
-      deleteFile(req.file.filename);
-    }
     console.error('Erro ao criar oferta:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
   }

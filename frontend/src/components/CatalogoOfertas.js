@@ -209,7 +209,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
                 <div className="oferta-image-container">
                   {oferta.imagem_caminhao ? (
                     <img
-                      src={`${process.env.REACT_APP_API_URL}/uploads/ofertas/${oferta.imagem_caminhao}`}
+                      src={oferta.imagem_caminhao}
                       alt={`Caminhão - ${oferta.origem} para ${oferta.destino}`}
                       className="oferta-image"
                       onError={(e) => {

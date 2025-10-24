@@ -127,7 +127,7 @@ const DetalhesOferta = () => {
             <div className="oferta-image-detalhes">
               {oferta.imagem_caminhao ? (
                 <img
-                  src={`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`}
+                  src={oferta.imagem_caminhao}
                   alt="Foto do caminhão"
                   onError={(e) => {
                     e.target.style.display = 'none';

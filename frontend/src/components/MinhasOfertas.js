@@ -242,7 +242,7 @@ const MinhasOfertas = () => {
                   {oferta.imagem_caminhao && (
                     <div className="oferta-imagem">
                       <img 
-                        src={`${process.env.REACT_APP_API_URL}/uploads/ofertas/${oferta.imagem_caminhao}`}
+                        src={oferta.imagem_caminhao}
                         alt="Foto do caminhão"
                         className="caminhao-foto"
                         onError={(e) => {

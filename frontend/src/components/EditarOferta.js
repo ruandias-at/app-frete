@@ -48,7 +48,7 @@ const EditarOferta = () => {
       setRemoverImagem(false);
 
       if (oferta.imagem_caminhao) {
-        setImagePreview(`${process.env.REACT_APP_API_URL}/uploads/ofertas/${oferta.imagem_caminhao}`);
+        setImagePreview(oferta.imagem_caminhao);
       }
 
     } catch (error) {
