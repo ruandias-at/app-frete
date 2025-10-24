@@ -15,7 +15,7 @@ const checkFretista = (req, res, next) => {
 };
 
 // Criar nova oferta (apenas fretistas)
-router.post('/', authenticateToken, checkFretista, upload.single('imagem_caminhao'), async (req, res) => {
+router.post('/', authenticateToken, checkFretista, async (req, res) => {
   try {
     const {
       origem,
