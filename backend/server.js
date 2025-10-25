@@ -1,43 +1,44 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const http = require('http');
-const socketIo = require('socket.io');
-require('dotenv').config();
-require('./config/cloudinary');
-const userRoutes = require('./routes/users');
-const passwordResetRoutes = require('./routes/passwordReset');
-const ofertasRoutes = require('./routes/ofertas');
-const mensagensRoutes = require('./routes/mensagens');
-const db = require('./config/database');
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import http from 'http';
+import { Server } from 'socket.io';
+import dotenv from 'dotenv';
+dotenv.config();
+
+import './config/cloudinary.js';
+import userRoutes from './routes/users.js';
+import passwordResetRoutes from './routes/passwordReset.js';
+import ofertasRoutes from './routes/ofertas.js';
+import mensagensRoutes from './routes/mensagens.js';
+import db from './config/database.js';
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
+const io = new Server(server, {
   cors: {
-    origin: 'https://frontend-production-e5e3.up.railway.app/', // Frontend URL
+    origin: 'https://frontend-production-e5e3.up.railway.app',
     methods: ['GET', 'POST'],
-    credentials: true
-  }
+    credentials: true,
+  },
 });
 
 const PORT = process.env.PORT || 5000;
 
-
-// Middlewares
-app.use(cors({
-  origin: "*",
-  credentials: true
-}));
+// ===== Middlewares =====
+app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
+// ===== Rotas API =====
+app.use('/api/users', userRoutes);
+app.use('/api/auth', passwordResetRoutes);
+app.use('/api/ofertas', ofertasRoutes);
+app.use('/api/mensagens', mensagensRoutes);
 
-// Exemplo de rota simples
-app.get("/", (req, res) => {
-  res.send("API Frete está online!");
+app.get('/api/hello', (req, res) => {
+  res.json({ message: 'Hello from backend with MySQL!' });
 });
 
-// Testar conexão com banco
 app.get('/api/test-db', async (req, res) => {
   try {
     const [rows] = await db.execute('SELECT 1 as test');
@@ -47,106 +48,59 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-// Rotas
-app.use('/api/users', userRoutes);
-app.use('/api/auth', passwordResetRoutes);
-app.use('/api/ofertas', ofertasRoutes);
-app.use('/api/mensagens', mensagensRoutes);
-
-// Rota básica
-app.get('/api/hello', (req, res) => {
-  res.json({ message: 'Hello from backend with MySQL!' });
-});
-
-// ===== SOCKET.IO - CHAT EM TEMPO REAL =====
-
-// Armazenar usuários online
+// ===== Socket.io =====
 const usuariosOnline = new Map();
 
 io.on('connection', (socket) => {
   console.log('🟢 Novo usuário conectado:', socket.id);
 
-  // Usuário se conecta ao chat
   socket.on('usuario_conectado', (userId) => {
     usuariosOnline.set(userId, socket.id);
-    console.log(`👤 Usuário ${userId} online`);
-    
-    // Notificar todos sobre usuários online
     io.emit('usuarios_online', Array.from(usuariosOnline.keys()));
   });
 
-  // Enviar mensagem
   socket.on('enviar_mensagem', async (data) => {
-    console.log('📨 Mensagem recebida:', data);
-    
     const { remetenteId, destinatarioId, mensagem, conversaId, remetenteNome } = data;
+    const mensagemData = { conversaId, remetenteId, destinatarioId, mensagem, remetenteNome, timestamp: new Date() };
     
-    const mensagemData = {
-      conversaId,
-      remetenteId,
-      destinatarioId,
-      mensagem,
-      remetenteNome,
-      timestamp: new Date()
-    };
-    
-    // Emitir para o destinatário
     const destinatarioSocketId = usuariosOnline.get(parseInt(destinatarioId));
     if (destinatarioSocketId) {
-      console.log('📤 Enviando para destinatário:', destinatarioId);
       io.to(destinatarioSocketId).emit('nova_mensagem', mensagemData);
-    } else {
-      console.log('⚠️ Destinatário offline:', destinatarioId);
     }
-    
-    // Confirmar envio para o remetente (mas não adicionar à lista dele)
-    socket.emit('mensagem_confirmada', {
-      status: 'enviada',
-      timestamp: new Date()
-    });
+    socket.emit('mensagem_confirmada', { status: 'enviada', timestamp: new Date() });
   });
 
-  // Usuário está digitando
-  socket.on('digitando', (data) => {
-    const { destinatarioId, remetenteNome } = data;
+  socket.on('digitando', ({ destinatarioId, remetenteNome }) => {
     const destinatarioSocketId = usuariosOnline.get(destinatarioId);
-    
-    if (destinatarioSocketId) {
-      io.to(destinatarioSocketId).emit('usuario_digitando', {
-        remetenteNome
-      });
-    }
+    if (destinatarioSocketId) io.to(destinatarioSocketId).emit('usuario_digitando', { remetenteNome });
   });
 
-  // Parar de digitar
-  socket.on('parou_digitar', (data) => {
-    const { destinatarioId } = data;
+  socket.on('parou_digitar', ({ destinatarioId }) => {
     const destinatarioSocketId = usuariosOnline.get(destinatarioId);
-    
-    if (destinatarioSocketId) {
-      io.to(destinatarioSocketId).emit('usuario_parou_digitar');
-    }
+    if (destinatarioSocketId) io.to(destinatarioSocketId).emit('usuario_parou_digitar');
   });
 
-  // Desconexão
   socket.on('disconnect', () => {
-    console.log('🔴 Usuário desconectado:', socket.id);
-    
-    // Remover usuário da lista de online
     for (const [userId, socketId] of usuariosOnline.entries()) {
       if (socketId === socket.id) {
         usuariosOnline.delete(userId);
-        console.log(`👤 Usuário ${userId} offline`);
         break;
       }
     }
-    
-    // Notificar todos sobre usuários online
     io.emit('usuarios_online', Array.from(usuariosOnline.keys()));
   });
 });
 
+// ===== Servir React build =====
+const __dirname = path.resolve();
+app.use(express.static(path.join(__dirname, 'client/build')));
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+// Catch-all para rotas do React Router
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
+
+// ===== Iniciar servidor =====
+server.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
