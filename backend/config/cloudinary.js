@@ -51,5 +51,5 @@ export const deleteCloudinaryImage = async (publicId) => {
   }
 };
 
-export { upload, uploadWithErrorHandling, deleteCloudinaryImage };
+export { upload, uploadWithErrorHandling };
 export default cloudinary;
