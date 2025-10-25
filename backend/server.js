@@ -37,6 +37,7 @@ app.get("/", (req, res) => {
   res.send("API Frete está online!");
 });
 
+
 // Testar conexão com banco
 app.get('/api/test-db', async (req, res) => {
   try {
@@ -146,13 +147,6 @@ io.on('connection', (socket) => {
   });
 });
 
-const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, 'client/build')));
-
-// Catch-all para rotas do React Router
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-});
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
