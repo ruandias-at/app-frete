@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -10,11 +10,17 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchStats = useCallback(async () => {
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
+
+  const fetchStats = async () => {
     try {
       if (user.tipo === 'fretista') {
         // Buscar estatísticas de ofertas para fretistas
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/stats/resumo`);
+        const response = await axios.get('http://localhost:5000/api/ofertas/stats/resumo');
         setStats(response.data.stats);
       } else {
         // Para clientes, você pode implementar estatísticas de solicitações no futuro
@@ -39,13 +45,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (user) {
-      fetchStats();
-    }
-  }, [user, fetchStats]);
+  };
 
   if (!user) {
     return <div>Carregando...</div>;

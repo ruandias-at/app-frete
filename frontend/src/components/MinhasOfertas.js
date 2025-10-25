@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ConfirmModal from './ConfirmModal';
 import './MinhasOfertas.css';
 
 const MinhasOfertas = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [ofertas, setOfertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -19,7 +20,7 @@ const MinhasOfertas = () => {
 
   const fetchOfertas = React.useCallback(async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/minhas`);
+      const response = await axios.get('http://localhost:5000/api/ofertas/minhas');
       setOfertas(response.data.ofertas);
     } catch (error) {
       setError('Erro ao carregar suas ofertas');
@@ -31,7 +32,7 @@ const MinhasOfertas = () => {
 
   const fetchStats = React.useCallback(async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/stats/resumo`);
+      const response = await axios.get('http://localhost:5000/api/ofertas/stats/resumo');
       setStats(response.data.stats);
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
@@ -60,7 +61,7 @@ const MinhasOfertas = () => {
 
   const handleUpdateStatus = async (ofertaId, newStatus) => {
     try {
-      await axios.patch(`${process.env.REACT_APP_API_URL}/api/ofertas/${ofertaId}/status`, {
+      await axios.patch(`http://localhost:5000/api/ofertas/${ofertaId}/status`, {
         status: newStatus
       });
       
@@ -84,7 +85,7 @@ const MinhasOfertas = () => {
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/ofertas/${deleteModal.ofertaId}`);
+      await axios.delete(`http://localhost:5000/api/ofertas/${deleteModal.ofertaId}`);
       
       // Atualizar a lista
       await fetchOfertas();
@@ -242,7 +243,7 @@ const MinhasOfertas = () => {
                   {oferta.imagem_caminhao && (
                     <div className="oferta-imagem">
                       <img 
-                        src={oferta.imagem_caminhao}
+                        src={`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`}
                         alt="Foto do caminhão"
                         className="caminhao-foto"
                         onError={(e) => {

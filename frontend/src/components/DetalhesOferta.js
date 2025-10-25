@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
@@ -14,9 +14,13 @@ const DetalhesOferta = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchOferta = useCallback(async () => {
+  useEffect(() => {
+    fetchOferta();
+  }, [id]);
+
+  const fetchOferta = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/${id}`);
+      const response = await axios.get(`http://localhost:5000/api/ofertas/${id}`);
       setOferta(response.data.oferta);
       setError('');
     } catch (error) {
@@ -29,11 +33,7 @@ const DetalhesOferta = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
-
-  useEffect(() => {
-    fetchOferta();
-  }, [id, fetchOferta]);
+  };
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -127,7 +127,7 @@ const DetalhesOferta = () => {
             <div className="oferta-image-detalhes">
               {oferta.imagem_caminhao ? (
                 <img
-                  src={oferta.imagem_caminhao}
+                  src={`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`}
                   alt="Foto do caminhão"
                   onError={(e) => {
                     e.target.style.display = 'none';

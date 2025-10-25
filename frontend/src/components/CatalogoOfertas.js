@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Slider from 'react-slick';
 import axios from 'axios';
@@ -13,10 +13,21 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    fetchOfertas();
+  }, []);
 
-  const fetchOfertas = useCallback(async () => {
+
+  // Aplicar filtros iniciais após carregar as ofertas
+  useEffect(() => {
+    if (ofertas.length > 0) {
+      aplicarFiltros(filtros);
+    }
+  }, [ofertas]); // Remove 'filtros' das dependências
+
+  const fetchOfertas = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas`);
+      const response = await axios.get('http://localhost:5000/api/ofertas');
       const todasOfertas = response.data.ofertas;
       setOfertas(todasOfertas);
       setOfertasFiltradas(limit ? todasOfertas.slice(0, limit) : todasOfertas);
@@ -26,14 +37,9 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     } finally {
       setLoading(false);
     }
-  }, [limit]);
+  };
 
-
-  useEffect(() => {
-    fetchOfertas();
-  }, [fetchOfertas]);  
-
-  const aplicarFiltros = useCallback((filtros) => {
+  const aplicarFiltros = (filtros) => {
     setFiltrosAtivos(filtros);
     
     let resultado = [...ofertas];
@@ -67,14 +73,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     }
 
     setOfertasFiltradas(limit ? resultado.slice(0, limit) : resultado);
-  }, [limit, ofertas]);
-
-  // Aplicar filtros iniciais após carregar as ofertas
-  useEffect(() => {
-    if (ofertas.length > 0) {
-      aplicarFiltros(filtros);
-    }
-  }, [ofertas, aplicarFiltros, filtros]); // Remove 'filtros' das dependências
+  };
 
   const limparFiltros = () => {
     setFiltrosAtivos({});
@@ -209,7 +208,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
                 <div className="oferta-image-container">
                   {oferta.imagem_caminhao ? (
                     <img
-                      src={oferta.imagem_caminhao}
+                      src={`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`}
                       alt={`Caminhão - ${oferta.origem} para ${oferta.destino}`}
                       className="oferta-image"
                       onError={(e) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -27,9 +27,26 @@ const EditarOferta = () => {
   const [success, setSuccess] = useState('');
   const [removerImagem, setRemoverImagem] = useState(false);
 
-  const fetchOferta = useCallback(async () => {
+  useEffect(() => {
+    if (user?.tipo === 'fretista') {
+      fetchOferta();
+    } else {
+      setLoading(false);
+    }
+  }, [id, user]);
+
+  if (user?.tipo !== 'fretista') {
+    return (
+      <div className="access-denied">
+        <h2>Acesso Negado</h2>
+        <p>Apenas fretistas podem editar ofertas de frete.</p>
+      </div>
+    );
+  }
+
+  const fetchOferta = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/ofertas/${id}`);
+      const response = await axios.get(`http://localhost:5000/api/ofertas/${id}`);
       const oferta = response.data.oferta;
 
       const dataFormatada = new Date(oferta.data_disponivel).toISOString().split('T')[0];
@@ -48,7 +65,7 @@ const EditarOferta = () => {
       setRemoverImagem(false);
 
       if (oferta.imagem_caminhao) {
-        setImagePreview(oferta.imagem_caminhao);
+        setImagePreview(`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`);
       }
 
     } catch (error) {
@@ -61,15 +78,7 @@ const EditarOferta = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
-  
-  useEffect(() => {
-    if (user?.tipo === 'fretista') {
-      fetchOferta();
-    } else {
-      setLoading(false);
-    }
-  }, [id, user, fetchOferta]);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -101,6 +110,7 @@ const EditarOferta = () => {
 
       setRemoverImagem(false);
 
+      // REMOVIDO O REDIMENSIONAMENTO - AGORA USA A IMAGEM ORIGINAL
       const reader = new FileReader();
       reader.onload = (e) => {
         // Usa a imagem original sem redimensionar
@@ -162,7 +172,7 @@ const EditarOferta = () => {
         submitData.append('remover_imagem', 'true');
       }
 
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/ofertas/${id}`, submitData, {
+      await axios.put(`http://localhost:5000/api/ofertas/${id}`, submitData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -181,16 +191,6 @@ const EditarOferta = () => {
 
     setSaving(false);
   };
-
-  if (user?.tipo !== 'fretista') {
-    return (
-      <div className="access-denied">
-        <h2>Acesso Negado</h2>
-        <p>Apenas fretistas podem editar ofertas de frete.</p>
-      </div>
-    );
-  }
-
 
   const hoje = new Date().toISOString().split('T')[0];
 

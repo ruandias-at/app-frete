@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, senha) => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/users/login`, {
+      const response = await axios.post('http://localhost:5000/api/users/login', {
         email,
         senha
       });
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
         userData.placa = placa;
       }
 
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/users/register`, userData);
+      const response = await axios.post('http://localhost:5000/api/users/register', userData);
 
       return { success: true, message: response.data.message };
     } catch (error) {

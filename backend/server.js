@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
 require('dotenv').config();
-require('./config/cloudinary');
+
 const userRoutes = require('./routes/users');
 const passwordResetRoutes = require('./routes/passwordReset');
 const ofertasRoutes = require('./routes/ofertas');
@@ -12,36 +13,24 @@ const db = require('./config/database');
 
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 5000;
-
-const allowedOrigins = [
-  'https://frontend-production-e5e3.up.railway.app',
-  'https://app-frete-production.up.railway.app/'  // Se o backend for acessado diretamente
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
-
 const io = socketIo(server, {
   cors: {
-    origin: allowedOrigins,  // Lista de origens permitidas
+    origin: 'http://localhost:3000', // Frontend URL
     methods: ['GET', 'POST'],
     credentials: true
   }
 });
 
-// Rota de  Teste simples
-app.get("/", (req, res) => {
-  res.send("API Frete está online!");
-});
+const PORT = process.env.PORT || 5000;
+
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+
+// Servir arquivos estáticos (imagens)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // Testar conexão com banco
@@ -66,19 +55,26 @@ app.get('/api/hello', (req, res) => {
 });
 
 // ===== SOCKET.IO - CHAT EM TEMPO REAL =====
+
+// Armazenar usuários online
 const usuariosOnline = new Map();
 
 io.on('connection', (socket) => {
   console.log('🟢 Novo usuário conectado:', socket.id);
 
+  // Usuário se conecta ao chat
   socket.on('usuario_conectado', (userId) => {
-    usuariosOnline.set(userId.toString(), socket.id);  // Padronizado como string
+    usuariosOnline.set(userId, socket.id);
     console.log(`👤 Usuário ${userId} online`);
+    
+    // Notificar todos sobre usuários online
     io.emit('usuarios_online', Array.from(usuariosOnline.keys()));
   });
 
+  // Enviar mensagem
   socket.on('enviar_mensagem', async (data) => {
     console.log('📨 Mensagem recebida:', data);
+    
     const { remetenteId, destinatarioId, mensagem, conversaId, remetenteNome } = data;
     
     const mensagemData = {
@@ -90,7 +86,8 @@ io.on('connection', (socket) => {
       timestamp: new Date()
     };
     
-    const destinatarioSocketId = usuariosOnline.get(destinatarioId.toString());  // Padronizado
+    // Emitir para o destinatário
+    const destinatarioSocketId = usuariosOnline.get(parseInt(destinatarioId));
     if (destinatarioSocketId) {
       console.log('📤 Enviando para destinatário:', destinatarioId);
       io.to(destinatarioSocketId).emit('nova_mensagem', mensagemData);
@@ -98,13 +95,40 @@ io.on('connection', (socket) => {
       console.log('⚠️ Destinatário offline:', destinatarioId);
     }
     
-    socket.emit('mensagem_confirmada', { status: 'enviada', timestamp: new Date() });
+    // Confirmar envio para o remetente (mas não adicionar à lista dele)
+    socket.emit('mensagem_confirmada', {
+      status: 'enviada',
+      timestamp: new Date()
+    });
   });
 
-  // ... (restante dos eventos permanece igual, mas aplique toString() se necessário)
+  // Usuário está digitando
+  socket.on('digitando', (data) => {
+    const { destinatarioId, remetenteNome } = data;
+    const destinatarioSocketId = usuariosOnline.get(destinatarioId);
+    
+    if (destinatarioSocketId) {
+      io.to(destinatarioSocketId).emit('usuario_digitando', {
+        remetenteNome
+      });
+    }
+  });
 
+  // Parar de digitar
+  socket.on('parou_digitar', (data) => {
+    const { destinatarioId } = data;
+    const destinatarioSocketId = usuariosOnline.get(destinatarioId);
+    
+    if (destinatarioSocketId) {
+      io.to(destinatarioSocketId).emit('usuario_parou_digitar');
+    }
+  });
+
+  // Desconexão
   socket.on('disconnect', () => {
     console.log('🔴 Usuário desconectado:', socket.id);
+    
+    // Remover usuário da lista de online
     for (const [userId, socketId] of usuariosOnline.entries()) {
       if (socketId === socket.id) {
         usuariosOnline.delete(userId);
@@ -112,11 +136,13 @@ io.on('connection', (socket) => {
         break;
       }
     }
+    
+    // Notificar todos sobre usuários online
     io.emit('usuarios_online', Array.from(usuariosOnline.keys()));
   });
 });
 
-// Correção: Usar server.listen
-server.listen(PORT, () => {
+
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
