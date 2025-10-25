@@ -12,22 +12,31 @@ const db = require('./config/database');
 
 const app = express();
 const server = http.createServer(app);
+const PORT = process.env.PORT || 5000;
+
+const allowedOrigins = [
+  'https://frontend-production-e5e3.up.railway.app',
+  'https://app-frete-production.up.railway.app/'  // Se o backend for acessado diretamente
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 const io = socketIo(server, {
   cors: {
-    origin: 'https://frontend-production-e5e3.up.railway.app/',  // Ou "*" para desenvolvimento
+    origin: allowedOrigins,  // Lista de origens permitidas
     methods: ['GET', 'POST'],
     credentials: true
   }
 });
-
-const PORT = process.env.PORT || 5000;
-
-// Middlewares
-app.use(cors({
-  origin: '*', 
-  credentials: true
-}));
-app.use(express.json());
 
 // Rota de  Teste simples
 app.get("/", (req, res) => {
