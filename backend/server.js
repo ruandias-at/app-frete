@@ -37,10 +37,6 @@ app.get("/", (req, res) => {
   res.send("API Frete está online!");
 });
 
-// Servir arquivos estáticos (imagens)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-
 // Testar conexão com banco
 app.get('/api/test-db', async (req, res) => {
   try {
