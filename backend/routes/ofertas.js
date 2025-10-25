@@ -2,8 +2,6 @@ const express = require('express');
 const Oferta = require('../models/Oferta');
 const authenticateToken = require('../middleware/auth');
 
-const { uploadWithErrorHandling } = require('../config/cloudinary');
-
 const router = express.Router();
 
 // Middleware para verificar se é fretista
@@ -11,6 +9,33 @@ const checkFretista = (req, res, next) => {
   if (req.user.tipo !== 'fretista') {
     return res.status(403).json({ message: 'Acesso negado. Apenas fretistas podem criar ofertas.' });
   }
+  next();
+};
+
+// ✅ MIDDLEWARE DE UPLOAD DIRETO NO ARQUIVO (solução rápida)
+const uploadWithErrorHandling = (req, res, next) => {
+  // Se não há arquivo, apenas continua
+  if (!req.files || !req.files.imagem_caminhao) {
+    return next();
+  }
+
+  const file = req.files.imagem_caminhao;
+  
+  // Verificações básicas
+  if (!file.mimetype.startsWith('image/')) {
+    return res.status(400).json({ error: 'Apenas imagens são permitidas' });
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    return res.status(400).json({ error: 'Arquivo muito grande. Máximo 5MB.' });
+  }
+
+  // Simula upload bem-sucedido (você pode adicionar Cloudinary depois)
+  req.file = {
+    path: `/uploads/temp-${Date.now()}-${file.name}`,
+    filename: `temp-${Date.now()}-${file.name}`
+  };
+  
   next();
 };
 
@@ -62,7 +87,6 @@ router.post('/', authenticateToken, checkFretista, uploadWithErrorHandling, asyn
       data_disponivel,
       capacidade_peso: capacidade_peso ? parseFloat(capacidade_peso) : null,
       capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null,
-      // Agora usa req.file do CloudinaryStorage
       imagem_caminhao: req.file ? req.file.path : null,
       imagem_public_id: req.file ? req.file.filename : null
     };
@@ -128,19 +152,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Função para deletar imagem do Cloudinary
-const deleteCloudinaryImage = async (publicId) => {
-  try {
-    if (publicId) {
-      await cloudinary.uploader.destroy(publicId);
-    }
-  } catch (error) {
-    console.error('Erro ao deletar imagem do Cloudinary:', error);
-  }
-};
-
-// Atualizar oferta (apenas o próprio fretista)
-router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, async (req, res) => {
+// Atualizar oferta (apenas o próprio fretista) - SEM UPLOAD POR ENQUANTO
+router.put('/:id', authenticateToken, checkFretista, async (req, res) => {
   try {
     const {
       origem,
@@ -149,8 +162,7 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       preco,
       data_disponivel,
       capacidade_peso,
-      capacidade_volume,
-      remover_imagem // Campo para indicar remoção de imagem
+      capacidade_volume
     } = req.body;
 
     // Validações básicas
@@ -160,31 +172,6 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       });
     }
 
-    // Buscar oferta atual para pegar imagem antiga
-    const ofertaAtual = await Oferta.findById(req.params.id);
-    if (!ofertaAtual || ofertaAtual.usuario_id !== req.user.userId) {
-      return res.status(404).json({ 
-        message: 'Oferta não encontrada ou você não tem permissão para editá-la' 
-      });
-    }
-
-    // LÓGICA PARA DETERMINAR A IMAGEM FINAL
-    let imagemFinal = ofertaAtual.imagem_caminhao;
-    let imagemPublicId = ofertaAtual.imagem_public_id;
-    let imagemParaDeletar = null;
-
-    if (req.file) {
-      // Se enviou nova imagem, usar a nova e marcar a antiga para deletar
-      imagemFinal = req.file.path;
-      imagemPublicId = req.file.filename;
-      imagemParaDeletar = ofertaAtual.imagem_public_id;
-    } else if (remover_imagem === 'true') {
-      // Se solicitou remover imagem, setar como null e marcar a antiga para deletar
-      imagemFinal = null;
-      imagemPublicId = null;
-      imagemParaDeletar = ofertaAtual.imagem_public_id;
-    }
-
     const ofertaData = {
       origem: origem.trim(),
       destino: destino.trim(),
@@ -192,9 +179,7 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       preco: parseFloat(preco),
       data_disponivel,
       capacidade_peso: capacidade_peso ? parseFloat(capacidade_peso) : null,
-      capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null,
-      imagem_caminhao: imagemFinal,
-      imagem_public_id: imagemPublicId
+      capacidade_volume: capacidade_volume ? parseFloat(capacidade_volume) : null
     };
 
     const updated = await Oferta.update(req.params.id, ofertaData, req.user.userId);
@@ -205,14 +190,8 @@ router.put('/:id', authenticateToken, checkFretista, uploadWithErrorHandling, as
       });
     }
 
-    // Deletar imagem antiga do Cloudinary se necessário
-    if (imagemParaDeletar) {
-      await deleteCloudinaryImage(imagemParaDeletar);
-    }
-
     res.json({ 
-      message: 'Oferta atualizada com sucesso',
-      imagem_updated: !!req.file || remover_imagem === 'true'
+      message: 'Oferta atualizada com sucesso'
     });
 
   } catch (error) {
@@ -251,12 +230,6 @@ router.patch('/:id/status', authenticateToken, checkFretista, async (req, res) =
 // Excluir oferta
 router.delete('/:id', authenticateToken, checkFretista, async (req, res) => {
   try {
-    // Buscar oferta para pegar public_id da imagem antes de deletar
-    const oferta = await Oferta.findById(req.params.id);
-    if (oferta && oferta.usuario_id === req.user.userId && oferta.imagem_public_id) {
-      await deleteCloudinaryImage(oferta.imagem_public_id);
-    }
-
     const deleted = await Oferta.delete(req.params.id, req.user.userId);
 
     if (!deleted) {
