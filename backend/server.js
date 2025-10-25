@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-// const path = require('path');  // Removido, pois não é usado
 const http = require('http');
 const socketIo = require('socket.io');
 require('dotenv').config();
@@ -15,7 +14,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: 'https://frontend-production-e5e3.up.railway.app/',  // Ou "*" para desenvolvimento
+    origin: '*',  // Ou "*" para desenvolvimento
     methods: ['GET', 'POST'],
     credentials: true
   }
