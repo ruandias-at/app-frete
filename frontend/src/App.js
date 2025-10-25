@@ -18,6 +18,9 @@ import DetalhesOferta from './components/DetalhesOferta';
 import Chat from './components/Chat';
 import './App.css';
 
+axios.defaults.baseURL = process.env.REACT_APP_BACKEND_URL || 'https://backend-production-xxxx.up.railway.app';  // Substitua pela URL real do backend no Railway
+axios.defaults.withCredentials = true;
+
 // Axios interceptors
 axios.interceptors.request.use(
   (config) => {
