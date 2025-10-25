@@ -4,7 +4,7 @@ const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
 require('dotenv').config();
-
+require('./config/cloudinary');
 const userRoutes = require('./routes/users');
 const passwordResetRoutes = require('./routes/passwordReset');
 const ofertasRoutes = require('./routes/ofertas');
@@ -21,7 +21,7 @@ const io = socketIo(server, {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 
 // Middlewares
