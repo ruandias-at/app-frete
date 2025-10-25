@@ -1,11 +1,11 @@
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import multer from 'multer';
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require('multer');
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_KEY,
-  api_secret: process.env.CLOUD_SECRET, // Corrigi para CLOUD_SECRET
+  api_secret: process.env.CLOUD_SECRET,
 });
 
 const storage = new CloudinaryStorage({
@@ -20,13 +20,13 @@ const storage = new CloudinaryStorage({
 const upload = multer({ 
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 5 * 1024 * 1024,
   }
 });
 
-// Middleware com tratamento de erro
+// ✅ Certifique-se que esta função está sendo exportada
 const uploadWithErrorHandling = (req, res, next) => {
-  upload.single('imagem')(req, res, (err) => {
+  upload.single('imagem_caminhao')(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -40,16 +40,5 @@ const uploadWithErrorHandling = (req, res, next) => {
   });
 };
 
-// Função para deletar imagem do Cloudinary
-export const deleteCloudinaryImage = async (publicId) => {
-  try {
-    const result = await cloudinary.uploader.destroy(publicId);
-    return result;
-  } catch (error) {
-    console.error('Erro ao deletar imagem do Cloudinary:', error);
-    throw error;
-  }
-};
-
-export { upload, uploadWithErrorHandling };
-export default cloudinary;
+// ✅ Exportação CORRETA
+module.exports = { upload, uploadWithErrorHandling, cloudinary };

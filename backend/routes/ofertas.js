@@ -1,8 +1,8 @@
 const express = require('express');
 const Oferta = require('../models/Oferta');
 const authenticateToken = require('../middleware/auth');
-const { uploadWithErrorHandling } = require('../config/cloudinary.js');
-const cloudinary = require('../config/cloudinary.js'); // Importa o cloudinary configurado
+
+const { uploadWithErrorHandling } = require('../config/cloudinary');
 
 const router = express.Router();
 
