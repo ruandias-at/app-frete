@@ -14,7 +14,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: 'https://frontend-production-e5e3.up.railway.app/',  // Ou "*" para desenvolvimento
+    origin: '*',  // Ou "*" para desenvolvimento
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors({
-  origin: '*', 
+  origin: 'https://frontend-production-e5e3.up.railway.app/',  // Alinhado com Socket.IO
   credentials: true
 }));
 app.use(express.json());
