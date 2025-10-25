@@ -30,7 +30,32 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ... (restante das rotas permanece igual)
+// Rota de  Teste simples
+app.get("/", (req, res) => {
+  res.send("API Frete está online!");
+});
+
+
+// Testar conexão com banco
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT 1 as test');
+    res.json({ message: 'Conexão com banco funcionando!', data: rows });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro na conexão com banco', error: error.message });
+  }
+});
+
+// Rotas
+app.use('/api/users', userRoutes);
+app.use('/api/auth', passwordResetRoutes);
+app.use('/api/ofertas', ofertasRoutes);
+app.use('/api/mensagens', mensagensRoutes);
+
+// Rota básica
+app.get('/api/hello', (req, res) => {
+  res.json({ message: 'Hello from backend with MySQL!' });
+});
 
 // ===== SOCKET.IO - CHAT EM TEMPO REAL =====
 const usuariosOnline = new Map();
