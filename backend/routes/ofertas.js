@@ -14,6 +14,12 @@ const checkFretista = (req, res, next) => {
   next();
 };
 
+console.log({
+  authenticateToken,
+  checkFretista,
+  upload
+});
+
 // Criar nova oferta (apenas fretistas)
 router.post('/', authenticateToken, checkFretista, uploadWithErrorHandling, async (req, res) => {
   try {
