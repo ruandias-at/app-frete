@@ -28,6 +28,7 @@ const Chat = () => {
   const [enviando, setEnviando] = useState(false);
   const mensagensEndRef = useRef(null);
   const digitandoTimeoutRef = useRef(null);
+  const intervaloRef = useRef(null); // Ref para o intervalo
 
   useEffect(() => {
       // Adiciona classe ao body quando o componente monta
@@ -47,6 +48,28 @@ const Chat = () => {
       setConversaAtual(null);
     }
   }, [conversaId, buscarMensagens, setConversaAtual]);
+
+  // ATUALIZAÇÃO: Polling para atualizar mensagens a cada 1 segundo
+  useEffect(() => {
+    const atualizarMensagensPeriodicamente = () => {
+      if (conversaAtual && conversaAtual.id) {
+        buscarMensagens(conversaAtual.id);
+      }
+    };
+
+    // Iniciar o polling
+    if (conversaAtual) {
+      intervaloRef.current = setInterval(atualizarMensagensPeriodicamente, 1000);
+    }
+
+    // Limpar intervalo quando o componente desmontar ou conversa mudar
+    return () => {
+      if (intervaloRef.current) {
+        clearInterval(intervaloRef.current);
+      }
+    };
+  }, [conversaAtual, buscarMensagens]);
+
 
   // Scroll automático para última mensagem
   useEffect(() => {

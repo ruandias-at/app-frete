@@ -40,14 +40,13 @@ const Home = () => {
           </div>
           
           <div className="hero-image">
-            <div className="truck-icon">
-              🚛
+            <div className="logo-image">
+              <img src="http://localhost:5000/uploads/static/logo-frete.png" alt="Logo AirFrete" />
             </div>
           </div>
         </div>
 
         <div className="catalog-section">
-          
           <CatalogoOfertas limit={4} />
         </div>
 

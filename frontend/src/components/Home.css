@@ -1,6 +1,8 @@
 html, body {
   margin: 0px;
   padding: 0px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
 }
 
 .home {
@@ -70,7 +72,7 @@ html, body {
   align-items: center;
 }
 
-.truck-icon {
+.logo-image {
   font-size: 15rem;
   opacity: 0.9;
   animation: float 3s ease-in-out infinite;

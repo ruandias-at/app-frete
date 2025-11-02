@@ -208,7 +208,7 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
                 className="oferta-emoji-placeholder"
                 style={{ display: oferta.imagem_caminhao ? 'none' : 'flex' }}
               >
-                🚛
+                <img src="http://localhost:5000/uploads/static/logo-frete.png" alt="Logo AirFrete"  />
               </div>
             </div>
 

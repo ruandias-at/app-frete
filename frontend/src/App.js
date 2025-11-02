@@ -2,7 +2,7 @@ import React from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ChatProvider } from './context/ChatContext'; // ← Importe o ChatProvider
+import { ChatProvider } from './context/ChatContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
@@ -57,7 +57,7 @@ axios.interceptors.response.use(
 function App() {
   return (
     <AuthProvider>
-      <ChatProvider> {/* ← Adicione o ChatProvider aqui */}
+      <ChatProvider>
         <Router>
           <div className="App">
             <Navbar />
@@ -106,7 +106,6 @@ function App() {
                 } 
               />
               
-              {/* Adicione a rota do Chat */}
               <Route 
                 path="/chat" 
                 element={
@@ -129,7 +128,7 @@ function App() {
             </Routes>
           </div>
         </Router>
-      </ChatProvider> {/* ← Fechamento do ChatProvider */}
+      </ChatProvider> 
     </AuthProvider>
   );
 }
