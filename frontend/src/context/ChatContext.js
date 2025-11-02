@@ -23,6 +23,128 @@ export const ChatProvider = ({ children }) => {
   const [usuariosOnline, setUsuariosOnline] = useState([]);
   const [usuarioDigitando, setUsuarioDigitando] = useState(false);
 
+  
+// Buscar conversas do usuário
+  const buscarConversas = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const response = await axios.get('http://localhost:5000/api/mensagens/conversas');
+      setConversas(response.data.conversas);
+    } catch (error) {
+      console.error('Erro ao buscar conversas:', error);
+    }
+  }, [user]);
+
+  // Buscar mensagens de uma conversa
+  const buscarMensagens = useCallback(async (conversaId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/mensagens/conversa/${conversaId}`);
+      setMensagens(response.data.mensagens);
+      setConversaAtual(response.data.conversa);
+    } catch (error) {
+      console.error('Erro ao buscar mensagens:', error);
+    }
+  }, []);
+
+
+
+  // Enviar mensagem
+  const enviarMensagem = async (conversaId, destinatarioId, conteudo) => {
+    try {
+      // Enviar via HTTP primeiro
+      await axios.post('http://localhost:5000/api/mensagens/enviar', {
+        conversaId,
+        destinatarioId,
+        conteudo
+      });
+
+      // Enviar via Socket.IO para tempo real
+      if (socket) {
+        socket.emit('enviar_mensagem', {
+          conversaId,
+          remetenteId: user.userId || user.id,
+          destinatarioId,
+          mensagem: conteudo,
+          remetenteNome: user.nome
+        });
+      }
+
+      // Atualizar conversas
+      buscarConversas();
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      throw error;
+    }
+  };
+
+    // Iniciar nova conversa
+  const iniciarConversa = async (destinatarioId, ofertaId = null) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/mensagens/conversa', {
+        destinatarioId,
+        ofertaId
+      });
+      
+      const conversaId = response.data.conversaId;
+      await buscarMensagens(conversaId);
+      await buscarConversas();
+      
+      return conversaId;
+    } catch (error) {
+      console.error('Erro ao iniciar conversa:', error);
+      throw error;
+    }
+  };
+
+  // Notificar que está digitando
+  const notificarDigitando = (destinatarioId) => {
+    if (socket) {
+      socket.emit('digitando', {
+        destinatarioId,
+        remetenteNome: user.nome
+      });
+    }
+  };
+
+  // Notificar que parou de digitar
+  const notificarParouDigitar = (destinatarioId) => {
+    if (socket) {
+      socket.emit('parou_digitar', { destinatarioId });
+    }
+  };
+
+  // Buscar total de mensagens não lidas
+  const buscarMensagensNaoLidas = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const response = await axios.get('http://localhost:5000/api/mensagens/nao-lidas');
+      setMensagensNaoLidas(response.data.total);
+    } catch (error) {
+      console.error('Erro ao buscar não lidas:', error);
+    }
+  }, [user]);
+
+  // Marcar mensagens como lidas
+  const marcarComoLida = useCallback(async (conversaId) => {
+    try {
+      await axios.patch(`http://localhost:5000/api/mensagens/conversa/${conversaId}/marcar-lida`);
+      await buscarMensagensNaoLidas();
+      await buscarConversas();
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error);
+    }
+  }, [buscarConversas, buscarMensagensNaoLidas]);
+
+  // Buscar conversas e não lidas quando usuário loga
+  useEffect(() => {
+    if (user) {
+      buscarConversas();
+      buscarMensagensNaoLidas();
+    }
+  }, [user, buscarConversas, buscarMensagensNaoLidas]);
+
   // Conectar ao Socket.IO quando usuário está logado
   useEffect(() => {
     if (user && !socket) {
@@ -115,127 +237,9 @@ export const ChatProvider = ({ children }) => {
         newSocket.disconnect();
       };
     }
-  }, [user]);
+  }, [user, buscarConversas, conversaAtual, marcarComoLida, socket, buscarMensagensNaoLidas]);
 
-  // Buscar conversas do usuário
-  const buscarConversas = useCallback(async () => {
-    if (!user) return;
-    
-    try {
-      const response = await axios.get('http://localhost:5000/api/mensagens/conversas');
-      setConversas(response.data.conversas);
-    } catch (error) {
-      console.error('Erro ao buscar conversas:', error);
-    }
-  }, [user]);
-
-  // Buscar mensagens de uma conversa
-  const buscarMensagens = useCallback(async (conversaId) => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/mensagens/conversa/${conversaId}`);
-      setMensagens(response.data.mensagens);
-      setConversaAtual(response.data.conversa);
-    } catch (error) {
-      console.error('Erro ao buscar mensagens:', error);
-    }
-  }, []);
-
-  // Iniciar nova conversa
-  const iniciarConversa = async (destinatarioId, ofertaId = null) => {
-    try {
-      const response = await axios.post('http://localhost:5000/api/mensagens/conversa', {
-        destinatarioId,
-        ofertaId
-      });
-      
-      const conversaId = response.data.conversaId;
-      await buscarMensagens(conversaId);
-      await buscarConversas();
-      
-      return conversaId;
-    } catch (error) {
-      console.error('Erro ao iniciar conversa:', error);
-      throw error;
-    }
-  };
-
-  // Enviar mensagem
-  const enviarMensagem = async (conversaId, destinatarioId, conteudo) => {
-    try {
-      // Enviar via HTTP primeiro
-      await axios.post('http://localhost:5000/api/mensagens/enviar', {
-        conversaId,
-        destinatarioId,
-        conteudo
-      });
-
-      // Enviar via Socket.IO para tempo real
-      if (socket) {
-        socket.emit('enviar_mensagem', {
-          conversaId,
-          remetenteId: user.userId || user.id,
-          destinatarioId,
-          mensagem: conteudo,
-          remetenteNome: user.nome
-        });
-      }
-
-      // Atualizar conversas
-      buscarConversas();
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      throw error;
-    }
-  };
-
-  // Notificar que está digitando
-  const notificarDigitando = (destinatarioId) => {
-    if (socket) {
-      socket.emit('digitando', {
-        destinatarioId,
-        remetenteNome: user.nome
-      });
-    }
-  };
-
-  // Notificar que parou de digitar
-  const notificarParouDigitar = (destinatarioId) => {
-    if (socket) {
-      socket.emit('parou_digitar', { destinatarioId });
-    }
-  };
-
-  // Marcar mensagens como lidas
-  const marcarComoLida = async (conversaId) => {
-    try {
-      await axios.patch(`http://localhost:5000/api/mensagens/conversa/${conversaId}/marcar-lida`);
-      await buscarMensagensNaoLidas();
-      await buscarConversas();
-    } catch (error) {
-      console.error('Erro ao marcar como lida:', error);
-    }
-  };
-
-  // Buscar total de mensagens não lidas
-  const buscarMensagensNaoLidas = async () => {
-    if (!user) return;
-    
-    try {
-      const response = await axios.get('http://localhost:5000/api/mensagens/nao-lidas');
-      setMensagensNaoLidas(response.data.total);
-    } catch (error) {
-      console.error('Erro ao buscar não lidas:', error);
-    }
-  };
-
-  // Buscar conversas e não lidas quando usuário loga
-  useEffect(() => {
-    if (user) {
-      buscarConversas();
-      buscarMensagensNaoLidas();
-    }
-  }, [user, buscarConversas]);
-
+  
   const value = {
     conversas,
     conversaAtual,

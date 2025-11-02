@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Slider from 'react-slick';
 import axios from 'axios';
@@ -12,73 +12,6 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchOfertas();
-  }, []);
-
-
-  // Aplicar filtros iniciais após carregar as ofertas
-  useEffect(() => {
-    if (ofertas.length > 0) {
-      aplicarFiltros(filtros);
-    }
-  }, [ofertas]); // Remove 'filtros' das dependências
-
-  const fetchOfertas = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/ofertas');
-      const todasOfertas = response.data.ofertas;
-      setOfertas(todasOfertas);
-      setOfertasFiltradas(limit ? todasOfertas.slice(0, limit) : todasOfertas);
-    } catch (error) {
-      console.error('Erro ao buscar ofertas:', error);
-      setError('Erro ao carregar ofertas');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const aplicarFiltros = (filtros) => {
-    setFiltrosAtivos(filtros);
-    
-    let resultado = [...ofertas];
-
-    // Filtrar por origem
-    if (filtros.origem) {
-      resultado = resultado.filter(oferta => 
-        oferta.origem.toLowerCase().includes(filtros.origem.toLowerCase())
-      );
-    }
-
-    // Filtrar por destino
-    if (filtros.destino) {
-      resultado = resultado.filter(oferta => 
-        oferta.destino.toLowerCase().includes(filtros.destino.toLowerCase())
-      );
-    }
-
-    // Filtrar por preço mínimo
-    if (filtros.preco_min) {
-      resultado = resultado.filter(oferta => 
-        parseFloat(oferta.preco) >= parseFloat(filtros.preco_min)
-      );
-    }
-
-    // Filtrar por preço máximo
-    if (filtros.preco_max) {
-      resultado = resultado.filter(oferta => 
-        parseFloat(oferta.preco) <= parseFloat(filtros.preco_max)
-      );
-    }
-
-    setOfertasFiltradas(limit ? resultado.slice(0, limit) : resultado);
-  };
-
-  const limparFiltros = () => {
-    setFiltrosAtivos({});
-    setOfertasFiltradas(limit ? ofertas.slice(0, limit) : ofertas);
-  };
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -95,8 +28,55 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
     });
   };
 
-  const handleOfertaClick = (ofertaId) => {
-    navigate(`/oferta/${ofertaId}`);
+  const fetchOfertas = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/ofertas');
+      const todasOfertas = response.data.ofertas;
+      setOfertas(todasOfertas);
+      setOfertasFiltradas(limit ? todasOfertas.slice(0, limit) : todasOfertas);
+    } catch (error) {
+      console.error('Erro ao buscar ofertas:', error);
+      setError('Erro ao carregar ofertas');
+    } finally {
+      setLoading(false);
+    }
+  }, [limit]);
+
+  const aplicarFiltros = useCallback((filtros) => {
+    setFiltrosAtivos(filtros);
+    
+    let resultado = [...ofertas];
+
+    if (filtros.origem) {
+      resultado = resultado.filter(oferta => 
+        oferta.origem.toLowerCase().includes(filtros.origem.toLowerCase())
+      );
+    }
+
+    if (filtros.destino) {
+      resultado = resultado.filter(oferta => 
+        oferta.destino.toLowerCase().includes(filtros.destino.toLowerCase())
+      );
+    }
+
+    if (filtros.preco_min) {
+      resultado = resultado.filter(oferta => 
+        parseFloat(oferta.preco) >= parseFloat(filtros.preco_min)
+      );
+    }
+
+    if (filtros.preco_max) {
+      resultado = resultado.filter(oferta => 
+        parseFloat(oferta.preco) <= parseFloat(filtros.preco_max)
+      );
+    }
+
+    setOfertasFiltradas(limit ? resultado.slice(0, limit) : resultado);
+  }, [ofertas, limit]);
+
+  const limparFiltros = () => {
+    setFiltrosAtivos({});
+    setOfertasFiltradas(limit ? ofertas.slice(0, limit) : ofertas);
   };
 
   const settings = {
@@ -125,6 +105,17 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
       }
     ]
   };
+
+  useEffect(() => {
+    fetchOfertas();
+  }, [fetchOfertas]);
+
+  // Aplicar filtros apenas se houver filtros ativos
+  useEffect(() => {
+    if (ofertas.length > 0 && filtros && Object.keys(filtros).length > 0) {
+      aplicarFiltros(filtros);
+    }
+  }, [ofertas, filtros, aplicarFiltros]);
 
   if (loading) {
     return (
@@ -156,13 +147,11 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
           <div className="empty-catalogo">
             <div className="empty-icon">📦</div>
             <p>Nenhuma oferta disponível no momento.</p>
-            <p className="empty-subtitle">Em breve teremos novas ofertas de frete!</p>
           </div>
         </div>
       </section>
     );
   }
-
 
   return (
     <section className="catalogo-section">
@@ -177,13 +166,11 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
           </p>
         </div>
 
-        {/* Filtros */}
         <FiltroOfertas 
           onFilter={aplicarFiltros}
           onClearFilters={limparFiltros}
         />
 
-        {/* Mensagem quando não há resultados nos filtros */}
         {ofertasFiltradas.length === 0 && Object.keys(filtrosAtivos).length > 0 && (
           <div className="no-results">
             <div className="no-results-icon">🔍</div>
@@ -194,89 +181,90 @@ const CatalogoOfertas = ({ limit = null, filtros = {} }) => {
             </button>
           </div>
         )}
-
-        {/* Carrossel */}
         {ofertasFiltradas.length > 0 && (
           <Slider {...settings} className="ofertas-carousel">
             {ofertasFiltradas.map((oferta) => (
             <div key={oferta.id} className="carousel-item">
               <div 
                 className="oferta-card-catalogo"
-                onClick={() => handleOfertaClick(oferta.id)}
+                onClick={() => {
+                  console.log('Clicou na oferta:', oferta.id);
+                  navigate(`/oferta/${oferta.id}`);
+                }}
               >
-                {/* Imagem ou Emoji */}
-                <div className="oferta-image-container">
-                  {oferta.imagem_caminhao ? (
-                    <img
-                      src={`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`}
-                      alt={`Caminhão - ${oferta.origem} para ${oferta.destino}`}
-                      className="oferta-image"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div 
-                    className="oferta-emoji-placeholder"
-                    style={{ display: oferta.imagem_caminhao ? 'none' : 'flex' }}
-                  >
-                    🚛
-                  </div>
-                </div>
-
-                {/* Conteúdo do Card */}
-                <div className="oferta-card-content">
-                  {/* Rota */}
-                  <div className="oferta-route-catalogo">
-                    <span className="route-origin">{oferta.origem}</span>
-                    <span className="route-arrow">→</span>
-                    <span className="route-destination">{oferta.destino}</span>
-                  </div>
-
-                  {/* Informações principais */}
-                  <div className="oferta-info-grid">
-                    <div className="info-item-catalogo">
-                      <span className="info-label">Preço</span>
-                      <span className="info-value price">{formatCurrency(oferta.preco)}</span>
-                    </div>
-                    <div className="info-item-catalogo">
-                      <span className="info-label">Data</span>
-                      <span className="info-value">{formatDate(oferta.data_disponivel)}</span>
-                    </div>
-                  </div>
-
-                  {/* Capacidades */}
-                  {(oferta.capacidade_peso || oferta.capacidade_volume) && (
-                    <div className="oferta-capacidades">
-                      {oferta.capacidade_peso && (
-                        <span className="capacidade-tag">
-                          ⚖️ {oferta.capacidade_peso}kg
-                        </span>
-                      )}
-                      {oferta.capacidade_volume && (
-                        <span className="capacidade-tag">
-                          📦 {oferta.capacidade_volume}m³
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Fretista */}
-                  <div className="oferta-fretista">
-                    <span className="fretista-icon">👤</span>
-                    <span className="fretista-nome">{oferta.fretista_nome}</span>
-                  </div>
-
-                  {/* Botão de ação */}
-                  <button className="ver-detalhes-btn">
-                    Ver Detalhes
-                  </button>
-                </div>
+            <div className="oferta-image-container">
+              {oferta.imagem_caminhao ? (
+                <img
+                  src={`http://localhost:5000/uploads/ofertas/${oferta.imagem_caminhao}`}
+                  alt={`Caminhão - ${oferta.origem} para ${oferta.destino}`}
+                  className="oferta-image"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div 
+                className="oferta-emoji-placeholder"
+                style={{ display: oferta.imagem_caminhao ? 'none' : 'flex' }}
+              >
+                🚛
               </div>
             </div>
-          ))}
-        </Slider>
+
+            <div className="oferta-card-content">
+              <div className="oferta-route-catalogo">
+                <span className="route-origin">{oferta.origem}</span>
+                <span className="route-arrow">→</span>
+                <span className="route-destination">{oferta.destino}</span>
+              </div>
+
+              <div className="oferta-info-grid">
+                <div className="info-item-catalogo">
+                  <span className="info-label">Preço</span>
+                  <span className="info-value price">{formatCurrency(oferta.preco)}</span>
+                </div>
+                <div className="info-item-catalogo">
+                  <span className="info-label">Data</span>
+                  <span className="info-value">{formatDate(oferta.data_disponivel)}</span>
+                </div>
+              </div>
+
+              {(oferta.capacidade_peso || oferta.capacidade_volume) && (
+                <div className="oferta-capacidades">
+                  {oferta.capacidade_peso && (
+                    <span className="capacidade-tag">
+                      ⚖️ {oferta.capacidade_peso}kg
+                    </span>
+                  )}
+                  {oferta.capacidade_volume && (
+                    <span className="capacidade-tag">
+                      📦 {oferta.capacidade_volume}m³
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="oferta-fretista">
+                <span className="fretista-icon">👤</span>
+                <span className="fretista-nome">{oferta.fretista_nome}</span>
+              </div>
+            
+            <button 
+              className="ver-detalhes-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('Clicou no botão:', oferta.id);
+                navigate(`/oferta/${oferta.id}`);
+              }}
+            >
+              Ver Detalhes
+            </button>
+            </div>
+          </div>
+          </div>
+        ))}
+      </Slider>
         )}
       </div>
     </section>

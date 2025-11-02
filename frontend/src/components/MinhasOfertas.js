@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ConfirmModal from './ConfirmModal';
 import './MinhasOfertas.css';
 
 const MinhasOfertas = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [ofertas, setOfertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

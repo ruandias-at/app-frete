@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -27,24 +27,9 @@ const EditarOferta = () => {
   const [success, setSuccess] = useState('');
   const [removerImagem, setRemoverImagem] = useState(false);
 
-  useEffect(() => {
-    if (user?.tipo === 'fretista') {
-      fetchOferta();
-    } else {
-      setLoading(false);
-    }
-  }, [id, user]);
+  
 
-  if (user?.tipo !== 'fretista') {
-    return (
-      <div className="access-denied">
-        <h2>Acesso Negado</h2>
-        <p>Apenas fretistas podem editar ofertas de frete.</p>
-      </div>
-    );
-  }
-
-  const fetchOferta = async () => {
+  const fetchOferta = useCallback(async () => {
     try {
       const response = await axios.get(`http://localhost:5000/api/ofertas/${id}`);
       const oferta = response.data.oferta;
@@ -78,7 +63,7 @@ const EditarOferta = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -127,6 +112,15 @@ const EditarOferta = () => {
       setImagePreview(null);
     }
   };
+  
+
+  useEffect(() => {
+    if (user?.tipo === 'fretista') {
+      fetchOferta();
+    } else {
+      setLoading(false);
+    }
+  }, [id, user, fetchOferta]);
 
   const removeImage = () => {
     setFormData(prev => ({
@@ -193,6 +187,15 @@ const EditarOferta = () => {
   };
 
   const hoje = new Date().toISOString().split('T')[0];
+
+  if (user?.tipo !== 'fretista') {
+    return (
+      <div className="access-denied">
+        <h2>Acesso Negado</h2>
+        <p>Apenas fretistas podem editar ofertas de frete.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

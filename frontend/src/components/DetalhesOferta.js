@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
@@ -14,11 +14,9 @@ const DetalhesOferta = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchOferta();
-  }, [id]);
+ 
 
-  const fetchOferta = async () => {
+  const fetchOferta = useCallback(async () => {
     try {
       const response = await axios.get(`http://localhost:5000/api/ofertas/${id}`);
       setOferta(response.data.oferta);
@@ -33,7 +31,7 @@ const DetalhesOferta = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -81,6 +79,10 @@ const DetalhesOferta = () => {
       alert(`Erro ao iniciar conversa: ${error.response?.data?.message || error.message}`);
     }
   };
+
+  useEffect(() => {
+    fetchOferta();
+  }, [id, fetchOferta]);
 
   if (loading) {
     return (
