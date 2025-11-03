@@ -59,14 +59,7 @@ const Navbar = () => {
                   </Link>
                 
                 
-                <div className="user-info">
-                  <span className="user-greeting">
-                    Olá, {user.nome}
-                  </span>
-                  <span className="user-type">
-                    ({user.tipo})
-                  </span>
-                </div>
+                
                 
                 <button 
                   onClick={handleLogout} 
