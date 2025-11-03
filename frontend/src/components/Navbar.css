@@ -90,6 +90,7 @@
   padding: 8px 16px;
   border-radius: 6px;
   transition: all 0.3s ease;
+  position: relative; /* Adicionado para o badge */
 }
 
 .nav-link:hover {
@@ -129,28 +130,56 @@
   box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
 }
 
-.user-info {
+/* CORREÇÕES DO CHAT BADGE */
+.chat-link {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0px;
-  margin-right: 10px;
+  align-items: center;
 }
 
-.user-greeting {
-  font-weight: 600;
-  color: #333;
-  font-size: 14px;
+.chat-badge {
+  position: absolute;
+  top: -5px; /* Ajustado */
+  right: -5px; /* Ajustado */
+  background: #ff4444; /* Cor mais visível */
+  color: white;
+  border-radius: 50%;
+  min-width: 20px; /* Alterado para min-width */
+  height: 20px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  display: flex !important; /* Forçar display */
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  z-index: 1001; /* Garantir que fique acima */
+  padding: 0 4px;
+  box-sizing: border-box;
 }
 
-.user-type {
-  font-size: 12px;
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  padding: 2px 2px;
-  border-radius: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
+/* Para números com 2 dígitos */
+.chat-badge[style*="width"] {
+  min-width: auto; /* Permitir ajuste automático */
+}
+
+/* Animação para chamar atenção */
+@keyframes pulse {
+  0% {
+    
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+  }
+  50% {
+    
+    box-shadow: 0 0 0 4px rgba(255, 68, 68, 0);
+  }
+  100% {
+    
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+  }
+}
+
+.chat-badge {
+  animation: pulse 2s infinite;
 }
 
 /* Responsividade */
@@ -186,11 +215,13 @@
     width: 100%;
   }
 
-  .user-info {
-    align-items: center;
-    flex-direction: row;
-    gap: 10px;
-    margin: 0;
+  .chat-badge {
+    top: -3px; 
+    right: -3px; 
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+    border: 1.5px solid white; /* Borda mais fina no mobile */
   }
 
   .nav-link,
@@ -205,7 +236,6 @@
   }
 }
 
-/* Ajuste para conteúdo da página */
 body {
   padding-top: 70px;
 }

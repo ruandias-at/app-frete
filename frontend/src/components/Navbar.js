@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useChat } from '../context/ChatContext';
 import './Navbar.css';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { mensagensNaoLidas } = useChat();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -48,6 +50,11 @@ const Navbar = () => {
                   onClick={closeMenu}
                 >
                   Chat
+                  {mensagensNaoLidas > 0 && (
+                    <span className="chat-badge">
+                      {mensagensNaoLidas > 99 ? '99+' : mensagensNaoLidas}
+                    </span>
+                  )}
                 </Link>
                 
                   <Link 
