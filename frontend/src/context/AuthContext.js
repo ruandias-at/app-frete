@@ -72,6 +72,24 @@ export const AuthProvider = ({ children }) => {
 
       const response = await axios.post('http://localhost:5000/api/users/register', userData);
 
+      // Extrair token e user da resposta
+      const { token, user } = response.data;
+      
+      console.log('🔑 Token recebido no registro:', token?.substring(0, 20) + '...');
+      console.log('👤 User criado:', user);
+      
+      // Salvar no localStorage (login automático)
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Configurar axios
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      console.log('✅ Usuário autenticado automaticamente');
+      
+      // Atualizar estado do usuário
+      setUser(user);
+
       return { success: true, message: response.data.message };
     } catch (error) {
       return {

@@ -49,7 +49,7 @@ const Navbar = () => {
                 >
                   Chat
                 </Link>
-                {user.tipo === 'fretista' ? (
+                
                   <Link 
                     to="/dashboard" 
                     className="nav-link"
@@ -57,7 +57,7 @@ const Navbar = () => {
                   >
                     Dashboard
                   </Link>
-                ) : (null)}
+                
                 
                 <div className="user-info">
                   <span className="user-greeting">

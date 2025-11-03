@@ -63,10 +63,9 @@ const Dashboard = () => {
           <p>Email: <strong>{user.email}</strong></p>
           
           <div className="quick-actions">
-            <h3>Ações Rápidas:</h3>
             {user.tipo === 'cliente' ? (
               <div className="action-buttons">
-                <button className="action-btn" id='buscar-fretes'>Buscar Fretes</button>
+                <Link to="/todas-ofertas" className="action-btn" id="buscar-fretes">Ver Ofertas</Link>
               </div>
             ) : (
               <div className="action-buttons">

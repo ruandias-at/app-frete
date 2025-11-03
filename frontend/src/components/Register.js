@@ -81,10 +81,15 @@ const Register = () => {
     );
     
     if (result.success) {
-      setSuccess('Conta criada com sucesso! Redirecionando para login...');
+      setSuccess('Conta criada com sucesso! Redirecionando...');
       setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+        // Redirecionar baseado no tipo de usuário
+        if (formData.tipo === 'fretista') {
+          navigate('/dashboard-fretista');
+        } else {
+          navigate('/dashboard');
+        }
+      }, 1500);
     } else {
       setError(result.message);
     }

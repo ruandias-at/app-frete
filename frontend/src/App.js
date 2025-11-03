@@ -15,6 +15,7 @@ import EditarOferta from './components/EditarOferta';
 import CatalogoOfertas from './components/CatalogoOfertas';
 import MinhasOfertas from './components/MinhasOfertas';
 import DetalhesOferta from './components/DetalhesOferta';
+import TodasOfertas from './components/TodasOfertas';
 import Chat from './components/Chat';
 import './App.css';
 
@@ -71,6 +72,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/oferta/:id" element={<DetalhesOferta />} />
               <Route path="/catalogo-ofertas" element={<CatalogoOfertas />} />
+              <Route path="/todas-ofertas" element={<TodasOfertas />} />
               
               {/* Rotas protegidas */}
               <Route 

@@ -114,11 +114,15 @@
   margin-top: 15px;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+  color: #aaaaaa;
+  
 }
 
 #buscar-fretes {
   height: 200px;
   font-size: 4em;
+  text-align: center;
+  padding: 40px;
 }
 
 .stats-card h3 {

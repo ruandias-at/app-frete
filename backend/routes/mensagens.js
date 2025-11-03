@@ -3,9 +3,6 @@ const Mensagem = require('../models/Mensagem');
 const authenticateToken = require('../middleware/auth');
 const router = express.Router();
 
-// LOG PARA DEBUG
-console.log('✅ Rotas de mensagens carregadas');
-
 router.get('/test', (req, res) => {
   res.json({ message: 'Rota de mensagens funcionando!' });
 });

@@ -26,10 +26,23 @@ router.post('/register', async (req, res) => {
 
     // Criar usuário
     const userId = await User.create({ nome, email, senha, tipo, placa });
-    
+
+    // Gerar token JWT para login automático
+    const token = jwt.sign(
+      { userId, email, tipo },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     res.status(201).json({ 
       message: 'Usuário criado com sucesso',
-      userId 
+      token,
+      user: {
+        id: userId,
+        nome,
+        email,
+        tipo
+      }
     });
   } catch (error) {
     console.error(error);
