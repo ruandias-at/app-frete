@@ -67,13 +67,15 @@ const Navbar = () => {
                 
                 
                 
-                
-                <button 
-                  onClick={handleLogout} 
-                  className="nav-button logout"
-                >
-                  Sair
-                </button>
+                <p>
+                  <span className='username-role'>{user.nome} ({user.tipo})</span>
+                  <button 
+                    onClick={handleLogout} 
+                    className="nav-button logout"
+                  >
+                    Sair
+                  </button>
+                </p>
               </>
             ) : (
               <>

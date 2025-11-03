@@ -162,6 +162,13 @@
   min-width: auto; /* Permitir ajuste automático */
 }
 
+.username-role {
+  padding: 10px;
+  font-family: 'Arial', sans-serif;
+  font-weight: 500;
+  color: #333;
+}
+
 /* Animação para chamar atenção */
 @keyframes pulse {
   0% {
