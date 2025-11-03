@@ -5,7 +5,6 @@ import { useChat } from '../context/ChatContext';
 import './Chat.css';
 
 const Chat = () => {
-
   const { conversaId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -21,24 +20,26 @@ const Chat = () => {
     enviarMensagem,
     notificarDigitando,
     notificarParouDigitar,
-    setConversaAtual
+    setConversaAtual,
+    buscarMensagensNaoLidas
   } = useChat();
 
   const [mensagemTexto, setMensagemTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const mensagensEndRef = useRef(null);
   const digitandoTimeoutRef = useRef(null);
-  const intervaloRef = useRef(null); // Ref para o intervalo
+  const intervaloRef = useRef(null);
+  const intervaloConversasRef = useRef(null); // Novo ref para atualizar conversas
 
   useEffect(() => {
-      // Adiciona classe ao body quando o componente monta
-      document.body.classList.add('no-scroll');
-      
-      // Remove a classe quando o componente desmonta
-      return () => {
-        document.body.classList.remove('no-scroll');
-      };
-    }, []);
+    // Adiciona classe ao body quando o componente monta
+    document.body.classList.add('no-scroll');
+    
+    // Remove a classe quando o componente desmonta
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, []);
 
   // Carregar conversa ao montar ou quando conversaId muda
   useEffect(() => {
@@ -49,7 +50,7 @@ const Chat = () => {
     }
   }, [conversaId, buscarMensagens, setConversaAtual]);
 
-  // ATUALIZAÇÃO: Polling para atualizar mensagens a cada 1 segundo
+  // Polling para atualizar mensagens a cada 1 segundo
   useEffect(() => {
     const atualizarMensagensPeriodicamente = () => {
       if (conversaAtual && conversaAtual.id) {
@@ -70,6 +71,23 @@ const Chat = () => {
     };
   }, [conversaAtual, buscarMensagens]);
 
+  // ATUALIZAÇÃO: Polling para atualizar lista de conversas a cada 3 segundos
+  useEffect(() => {
+    const atualizarConversasPeriodicamente = () => {
+      buscarConversas();
+      buscarMensagensNaoLidas();
+    };
+
+    // Iniciar o polling para conversas
+    intervaloConversasRef.current = setInterval(atualizarConversasPeriodicamente, 3000);
+
+    // Limpar intervalo quando o componente desmontar
+    return () => {
+      if (intervaloConversasRef.current) {
+        clearInterval(intervaloConversasRef.current);
+      }
+    };
+  }, [buscarConversas, buscarMensagensNaoLidas]);
 
   // Scroll automático para última mensagem
   useEffect(() => {
@@ -80,6 +98,18 @@ const Chat = () => {
   useEffect(() => {
     buscarConversas();
   }, [buscarConversas]);
+
+  // Função para clicar em uma conversa
+  const handleSelecionarConversa = async (conversa) => {
+    // Navegar para a conversa
+    navigate(`/chat/${conversa.id}`);
+    
+    // Buscar mensagens da conversa (já marca como lida automaticamente no contexto)
+    await buscarMensagens(conversa.id);
+    
+    // Forçar atualização das conversas para refletir mudanças
+    await buscarConversas();
+  };
 
   const handleEnviarMensagem = async (e) => {
     e.preventDefault();
@@ -98,9 +128,9 @@ const Chat = () => {
       setMensagemTexto('');
       notificarParouDigitar(conversaAtual.outro_usuario_id);
       
-      // Recarregar mensagens após enviar
+      // Atualizar conversas após enviar
       setTimeout(() => {
-        buscarMensagens(conversaAtual.id);
+        buscarConversas();
       }, 500);
       
     } catch (error) {
@@ -175,7 +205,7 @@ const Chat = () => {
               <div
                 key={conversa.id}
                 className={`conversa-item ${conversaAtual?.id === conversa.id ? 'ativa' : ''}`}
-                onClick={() => navigate(`/chat/${conversa.id}`)}
+                onClick={() => handleSelecionarConversa(conversa)}
               >
                 <div className="conversa-avatar">
                   {conversa.outro_usuario_nome.charAt(0).toUpperCase()}

@@ -23,29 +23,25 @@ export const ChatProvider = ({ children }) => {
   const [usuariosOnline, setUsuariosOnline] = useState([]);
   const [usuarioDigitando, setUsuarioDigitando] = useState(false);
 
-  
-// Buscar conversas do usuário
+  // Buscar conversas do usuário
   const buscarConversas = useCallback(async () => {
     if (!user) return;
     
     try {
       const response = await axios.get('http://localhost:5000/api/mensagens/conversas');
-      setConversas(response.data.conversas);
+      const conversasData = response.data.conversas;
+      setConversas(conversasData);
+      
+      // Calcular total de mensagens não lidas
+      const totalNaoLidas = conversasData.reduce((total, conversa) => {
+        return total + (conversa.mensagens_nao_lidas || 0);
+      }, 0);
+      
+      setMensagensNaoLidas(totalNaoLidas);
     } catch (error) {
       console.error('Erro ao buscar conversas:', error);
     }
   }, [user]);
-
-  // Buscar mensagens de uma conversa
-  const buscarMensagens = useCallback(async (conversaId) => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/mensagens/conversa/${conversaId}`);
-      setMensagens(response.data.mensagens);
-      setConversaAtual(response.data.conversa);
-    } catch (error) {
-      console.error('Erro ao buscar mensagens:', error);
-    }
-  }, []);
 
 
 
@@ -70,15 +66,15 @@ export const ChatProvider = ({ children }) => {
         });
       }
 
-      // Atualizar conversas
-      buscarConversas();
+      // Atualizar conversas imediatamente para mostrar a última mensagem
+      await buscarConversas();
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       throw error;
     }
   };
 
-    // Iniciar nova conversa
+  // Iniciar nova conversa
   const iniciarConversa = async (destinatarioId, ofertaId = null) => {
     try {
       const response = await axios.post('http://localhost:5000/api/mensagens/conversa', {
@@ -99,9 +95,10 @@ export const ChatProvider = ({ children }) => {
 
   // Notificar que está digitando
   const notificarDigitando = (destinatarioId) => {
-    if (socket) {
+    if (socket && conversaAtual) {
       socket.emit('digitando', {
         destinatarioId,
+        conversaId: conversaAtual.id,
         remetenteNome: user.nome
       });
     }
@@ -109,8 +106,11 @@ export const ChatProvider = ({ children }) => {
 
   // Notificar que parou de digitar
   const notificarParouDigitar = (destinatarioId) => {
-    if (socket) {
-      socket.emit('parou_digitar', { destinatarioId });
+    if (socket && conversaAtual) {
+      socket.emit('parou_digitar', { 
+        destinatarioId,
+        conversaId: conversaAtual.id
+      });
     }
   };
 
@@ -130,12 +130,75 @@ export const ChatProvider = ({ children }) => {
   const marcarComoLida = useCallback(async (conversaId) => {
     try {
       await axios.patch(`http://localhost:5000/api/mensagens/conversa/${conversaId}/marcar-lida`);
+      
+      // Atualizar estado local imediatamente para feedback visual
+      setConversas(prevConversas => 
+        prevConversas.map(conversa => 
+          conversa.id === conversaId 
+            ? { ...conversa, mensagens_nao_lidas: 0 }
+            : conversa
+        )
+      );
+      
+      // Recalcular total de não lidas
       await buscarMensagensNaoLidas();
-      await buscarConversas();
+      
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }
-  }, [buscarConversas, buscarMensagensNaoLidas]);
+  }, [buscarMensagensNaoLidas]);
+
+    // Buscar mensagens de uma conversa
+  const buscarMensagens = useCallback(async (conversaId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/mensagens/conversa/${conversaId}`);
+      setMensagens(response.data.mensagens);
+      setConversaAtual(response.data.conversa);
+      
+      // Marcar mensagens como lidas ao abrir a conversa
+      if (conversaId) {
+        await marcarComoLida(conversaId);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar mensagens:', error);
+    }
+  }, [marcarComoLida]);
+
+  // Função para atualizar conversa quando recebe nova mensagem
+  const atualizarConversaComNovaMensagem = useCallback((data) => {
+    setConversas(prevConversas => {
+      const conversaIndex = prevConversas.findIndex(c => c.id === data.conversaId);
+      
+      if (conversaIndex === -1) {
+        // Se é uma nova conversa, buscar todas as conversas
+        buscarConversas();
+        return prevConversas;
+      }
+      
+      const novasConversas = [...prevConversas];
+      const conversaAtualizada = { ...novasConversas[conversaIndex] };
+      
+      // Atualizar última mensagem e timestamp
+      conversaAtualizada.ultima_mensagem = data.mensagem;
+      conversaAtualizada.ultima_mensagem_em = data.timestamp || new Date();
+      
+      // Incrementar mensagens não lidas se não for a conversa atual
+      if (!conversaAtual || conversaAtual.id !== data.conversaId) {
+        conversaAtualizada.mensagens_nao_lidas = (conversaAtualizada.mensagens_nao_lidas || 0) + 1;
+      }
+      
+      // Mover conversa para o topo
+      novasConversas.splice(conversaIndex, 1);
+      novasConversas.unshift(conversaAtualizada);
+      
+      return novasConversas;
+    });
+    
+    // Atualizar contador total de não lidas
+    if (!conversaAtual || conversaAtual.id !== data.conversaId) {
+      setMensagensNaoLidas(prev => prev + 1);
+    }
+  }, [conversaAtual, buscarConversas]);
 
   // Buscar conversas e não lidas quando usuário loga
   useEffect(() => {
@@ -164,6 +227,9 @@ export const ChatProvider = ({ children }) => {
       newSocket.on('nova_mensagem', (data) => {
         console.log('📨 Nova mensagem recebida:', data);
         
+        // Atualizar lista de conversas com a nova mensagem
+        atualizarConversaComNovaMensagem(data);
+        
         // Adicionar mensagem se estiver na conversa atual
         if (conversaAtual && data.conversaId === conversaAtual.id) {
           const novaMensagem = {
@@ -179,19 +245,16 @@ export const ChatProvider = ({ children }) => {
           
           setMensagens(prev => [...prev, novaMensagem]);
           
-          // Marcar como lida
+          // Marcar como lida automaticamente se estiver na conversa
           marcarComoLida(data.conversaId);
-        } else {
-          // Atualizar contador de não lidas
-          buscarMensagensNaoLidas();
         }
-        
-        // Atualizar lista de conversas
-        buscarConversas();
       });
 
       newSocket.on('mensagem_enviada', (data) => {
         console.log('✅ Confirmação de envio:', data);
+        
+        // Atualizar lista de conversas quando envia mensagem
+        atualizarConversaComNovaMensagem(data);
         
         // Adicionar mensagem enviada à lista se estiver na conversa
         if (conversaAtual && data.conversaId === conversaAtual.id) {
@@ -223,12 +286,34 @@ export const ChatProvider = ({ children }) => {
         }
       });
 
-      newSocket.on('usuario_digitando', () => {
-        setUsuarioDigitando(true);
+      newSocket.on('mensagens_lidas', (data) => {
+        console.log('👀 Mensagens marcadas como lidas:', data);
+        
+        // Atualizar estado local quando outras pessoas leem mensagens
+        if (data.conversaId) {
+          setConversas(prevConversas => 
+            prevConversas.map(conversa => 
+              conversa.id === data.conversaId 
+                ? { ...conversa, mensagens_nao_lidas: 0 }
+                : conversa
+            )
+          );
+          
+          // Recalcular total
+          buscarMensagensNaoLidas();
+        }
       });
 
-      newSocket.on('usuario_parou_digitar', () => {
-        setUsuarioDigitando(false);
+      newSocket.on('usuario_digitando', (data) => {
+        if (conversaAtual && data.conversaId === conversaAtual.id) {
+          setUsuarioDigitando(true);
+        }
+      });
+
+      newSocket.on('usuario_parou_digitar', (data) => {
+        if (conversaAtual && data.conversaId === conversaAtual.id) {
+          setUsuarioDigitando(false);
+        }
       });
 
       setSocket(newSocket);
@@ -237,9 +322,16 @@ export const ChatProvider = ({ children }) => {
         newSocket.disconnect();
       };
     }
-  }, [user, buscarConversas, conversaAtual, marcarComoLida, socket, buscarMensagensNaoLidas]);
+  }, [user, conversaAtual, marcarComoLida, socket, buscarMensagensNaoLidas, atualizarConversaComNovaMensagem]);
 
-  
+  // Efeito para marcar mensagens como lidas quando a conversa é aberta
+  useEffect(() => {
+    if (conversaAtual && conversaAtual.id) {
+      // Marcar como lida imediatamente ao abrir a conversa
+      marcarComoLida(conversaAtual.id);
+    }
+  }, [conversaAtual, marcarComoLida]);
+
   const value = {
     conversas,
     conversaAtual,
@@ -254,7 +346,8 @@ export const ChatProvider = ({ children }) => {
     notificarDigitando,
     notificarParouDigitar,
     marcarComoLida,
-    setConversaAtual
+    setConversaAtual,
+    buscarMensagensNaoLidas
   };
 
   return (
